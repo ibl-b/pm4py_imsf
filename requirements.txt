@@ -1,11 +1,13 @@
+numpy<2
+pandas
 deprecation
+networkx
 graphviz
+wheel
+setuptools
 intervaltree
 lxml
 matplotlib
-networkx
-numpy
-pandas
 pydotplus
 pytz
 scipy
