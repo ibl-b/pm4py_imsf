@@ -1,4 +1,4 @@
-from pm4py.objects.conversion.prefix_tree.variants import to_petri_net
+from pm4py.objects.conversion.trie.variants import to_petri_net
 from enum import Enum
 from pm4py.util import exec_utils
 from pm4py.objects.petri_net.obj import PetriNet, Marking
@@ -22,6 +22,8 @@ def apply(prefix_tree: Trie, variant=Variants.TO_PETRI_NET, parameters: Optional
     variant
         Variant of the conversion:
         - Variants.TO_PETRI_NET => converts the prefix tree object to a Petri net
+    parameters
+        Optional parameters of the method.
 
     Returns
     ----------------

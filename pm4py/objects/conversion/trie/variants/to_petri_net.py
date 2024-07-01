@@ -35,6 +35,8 @@ def apply(prefix_tree: Trie, parameters: Optional[Dict[Any, Any]] = None) -> Tup
     -----------------
     prefix_tree
         Prefix_tree
+    parameters
+        Optional parameters of the method.
 
     Returns
     -----------------

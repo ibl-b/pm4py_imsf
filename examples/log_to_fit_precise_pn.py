@@ -1,5 +1,5 @@
 import pm4py
-from pm4py.objects.conversion.prefix_tree import converter as trie_converter
+from pm4py.objects.conversion.trie import converter as trie_converter
 
 
 def execute_script():
