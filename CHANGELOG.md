@@ -24,6 +24,8 @@
   * issue with closing in-memory files when parsing a XES from string
 * d51bd9e24aed442f011917d6b77793b118bbf89f
   * minor fix OCEL interleavings computation
+* 39d769cad1327c47d5948b0c40be4a90e41fcce7
+  * removed indeterminism in TBR with duplicate transitions
 
 ### Removed
 
