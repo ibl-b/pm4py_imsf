@@ -27,7 +27,7 @@ from pm4py.util import constants
 def view_petri_net(petri_net: PetriNet, initial_marking: Optional[Marking] = None,
                    final_marking: Optional[Marking] = None, format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW, bgcolor: str = "white",
                    decorations: Dict[Any, Any] = None, debug: bool = False, rankdir: str = constants.DEFAULT_RANKDIR_GVIZ,
-                   graph_title: Optional[str] = None):
+                   graph_title: Optional[str] = None, variant_str: str = "wo_decoration", log: Optional[Union[EventLog, pd.DataFrame]] = None):
     """
     Views a (composite) Petri net
 
@@ -40,6 +40,10 @@ def view_petri_net(petri_net: PetriNet, initial_marking: Optional[Marking] = Non
     :param debug: Boolean enabling/disabling the debug mode (show place and transition's names)
     :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
     :param graph_title: Sets the title of the visualization (if provided)
+    :param variant_str: the variant to be used (possible values:
+    'wo_decoration', 'token_decoration_frequency', 'token_decoration_performance', 'greedy_decoration_frequency',
+    'greedy_decoration_performance', 'alignments')
+    :param log: the event log or Pandas dataframe that should be used
 
     .. code-block:: python3
 
@@ -50,19 +54,36 @@ def view_petri_net(petri_net: PetriNet, initial_marking: Optional[Marking] = Non
     """
     format = str(format).lower()
     from pm4py.visualization.petri_net import visualizer as pn_visualizer
-    parameters = {pn_visualizer.Variants.WO_DECORATION.value.Parameters.FORMAT: format, "bgcolor": bgcolor, "decorations": decorations, "debug": debug, "set_rankdir": rankdir}
+    variant = None
+    if variant_str == "wo_decoration":
+        variant = pn_visualizer.Variants.WO_DECORATION
+    elif variant_str == "token_decoration_frequency":
+        variant = pn_visualizer.Variants.FREQUENCY
+    elif variant_str == "token_decoration_performance":
+        variant = pn_visualizer.Variants.PERFORMANCE
+    elif variant_str == "greedy_decoration_frequency":
+        variant = pn_visualizer.Variants.FREQUENCY_GREEDY
+    elif variant_str == "greedy_decoration_performance":
+        variant = pn_visualizer.Variants.PERFORMANCE_GREEDY
+    elif variant_str == "alignments":
+        variant = pn_visualizer.Variants.ALIGNMENTS
+
+    if variant_str != "wo_decoration" and log is None:
+        raise Exception("the provision of the 'log' parameter is essential for decoration purposes.")
+
+    parameters = {"format": format, "bgcolor": bgcolor, "decorations": decorations, "debug": debug, "set_rankdir": rankdir}
     parameters["enable_graph_title"] = constants.DEFAULT_ENABLE_GRAPH_TITLES
     if graph_title:
         parameters["enable_graph_title"] = True
         parameters["graph_title"] = graph_title
     gviz = pn_visualizer.apply(petri_net, initial_marking, final_marking,
-                               parameters=parameters)
+                               log=log, variant=variant, parameters=parameters)
     pn_visualizer.view(gviz)
 
 
 def save_vis_petri_net(petri_net: PetriNet, initial_marking: Marking, final_marking: Marking, file_path: str, bgcolor: str = "white",
                    decorations: Dict[Any, Any] = None, debug: bool = False, rankdir: str = constants.DEFAULT_RANKDIR_GVIZ,
-                    graph_title: Optional[str] = None, **kwargs):
+                    graph_title: Optional[str] = None, variant_str: str = "wo_decoration", log: Optional[Union[EventLog, pd.DataFrame]] = None, **kwargs):
     """
     Saves a Petri net visualization to a file
 
@@ -75,6 +96,10 @@ def save_vis_petri_net(petri_net: PetriNet, initial_marking: Marking, final_mark
     :param debug: Boolean enabling/disabling the debug mode (show place and transition's names)
     :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
     :param graph_title: Sets the title of the visualization (if provided)
+    :param variant_str: the variant to be used (possible values:
+    'wo_decoration', 'token_decoration_frequency', 'token_decoration_performance', 'greedy_decoration_frequency',
+    'greedy_decoration_performance', 'alignments')
+    :param log: the event log or Pandas dataframe that should be used
 
     .. code-block:: python3
 
@@ -86,13 +111,30 @@ def save_vis_petri_net(petri_net: PetriNet, initial_marking: Marking, final_mark
     file_path = str(file_path)
     format = os.path.splitext(file_path)[1][1:].lower()
     from pm4py.visualization.petri_net import visualizer as pn_visualizer
-    parameters = {pn_visualizer.Variants.WO_DECORATION.value.Parameters.FORMAT: format, "bgcolor": bgcolor, "decorations": decorations, "debug": debug, "set_rankdir": rankdir}
+    variant = None
+    if variant_str == "wo_decoration":
+        variant = pn_visualizer.Variants.WO_DECORATION
+    elif variant_str == "token_decoration_frequency":
+        variant = pn_visualizer.Variants.FREQUENCY
+    elif variant_str == "token_decoration_performance":
+        variant = pn_visualizer.Variants.PERFORMANCE
+    elif variant_str == "greedy_decoration_frequency":
+        variant = pn_visualizer.Variants.FREQUENCY_GREEDY
+    elif variant_str == "greedy_decoration_performance":
+        variant = pn_visualizer.Variants.PERFORMANCE_GREEDY
+    elif variant_str == "alignments":
+        variant = pn_visualizer.Variants.ALIGNMENTS
+
+    if variant_str != "wo_decoration" and log is None:
+        raise Exception("the provision of the 'log' parameter is essential for decoration purposes.")
+
+    parameters = {"format": format, "bgcolor": bgcolor, "decorations": decorations, "debug": debug, "set_rankdir": rankdir}
     parameters["enable_graph_title"] = constants.DEFAULT_ENABLE_GRAPH_TITLES
     if graph_title:
         parameters["enable_graph_title"] = True
         parameters["graph_title"] = graph_title
     gviz = pn_visualizer.apply(petri_net, initial_marking, final_marking,
-                               parameters=parameters)
+                               log=log, variant=variant, parameters=parameters)
     return pn_visualizer.save(gviz, file_path)
 
 
