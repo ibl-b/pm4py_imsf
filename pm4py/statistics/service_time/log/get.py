@@ -1,5 +1,4 @@
 from enum import Enum
-from statistics import mean, median
 
 from pm4py.util import exec_utils, constants, xes_constants
 from pm4py.objects.conversion.log import converter as log_converter
@@ -86,6 +85,8 @@ def apply(log: EventLog, parameters: Optional[Dict[Union[str, Parameters], Any]]
                 start_time = event[start_timestamp_key].timestamp()
                 complete_time = event[timestamp_key].timestamp()
                 durations_dict[activity].append(complete_time - start_time)
+
+    from statistics import mean, median
 
     for act in durations_dict:
         if aggregation_measure == "median":
