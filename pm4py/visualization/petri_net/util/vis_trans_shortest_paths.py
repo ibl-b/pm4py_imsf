@@ -1,5 +1,3 @@
-from statistics import mean, median, stdev
-
 from pm4py.visualization.common.utils import *
 
 
@@ -169,6 +167,8 @@ def get_decorations_from_dfg_spaths_acticount(net, dfg, spaths, activities_count
     decorations
         Decorations to use for the Petri net
     """
+    from statistics import mean, median, stdev
+
     decorations_single_contrib = {}
     decorations_single_contrib_trans = {}
     decorations_int = {}
