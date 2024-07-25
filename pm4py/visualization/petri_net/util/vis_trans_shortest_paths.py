@@ -1,5 +1,3 @@
-from statistics import mean, median, stdev
-
 from pm4py.util.vis_utils import human_readable_stat, get_arc_penwidth, get_trans_freq_color
 
 
@@ -169,6 +167,8 @@ def get_decorations_from_dfg_spaths_acticount(net, dfg, spaths, activities_count
     decorations
         Decorations to use for the Petri net
     """
+    from statistics import mean, median, stdev
+
     decorations_single_contrib = {}
     decorations_single_contrib_trans = {}
     decorations_int = {}
