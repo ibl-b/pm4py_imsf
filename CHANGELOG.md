@@ -1,6 +1,24 @@
 # Changelog of pm4py
 
 
+## pm4py 2.7.15 (2024.07.XX)
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Fixed
+
+### Removed
+
+### Other
+
+
+---
+
+
 ## pm4py 2.7.14 (2024.07.16)
 
 ### Added
