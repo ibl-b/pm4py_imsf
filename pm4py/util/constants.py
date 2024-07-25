@@ -120,7 +120,7 @@ OPENAI_DEFAULT_TTS_VOICE = get_param_from_env("PM4PY_OPENAI_DEFAULT_TTS_VOICE", 
 
 OPENAI_EXEC_RESULT = True if get_param_from_env("PM4PY_OPENAI_EXEC_RESULT", "False").lower() == "true" else False
 DEFAULT_GVIZ_VIEW = get_param_from_env("PM4PY_DEFAULT_GVIZ_VIEW", None)
-DEFAULT_ENABLE_VISUALIZATIONS_VIEW = False if get_param_from_env("PM4PY_DEFAULT_ENABLE_VISUALIZATIONS_VIEW", "False").lower() == "false" else True
+DEFAULT_ENABLE_VISUALIZATIONS_VIEW = False if get_param_from_env("PM4PY_DEFAULT_ENABLE_VISUALIZATIONS_VIEW", "True").lower() == "false" else True
 DEFAULT_ENABLE_GRAPH_TITLES = True if get_param_from_env("PM4PY_DEFAULT_ENABLE_GRAPH_TITLES", "False").lower() == "true" else False
 
 JQUERY_LINK = "https://code.jquery.com/jquery-3.6.3.min.js"
