@@ -1,4 +1,4 @@
-FROM python:3.12.4-bookworm
+FROM python:3.13.0-bookworm
 
 RUN apt-get update
 RUN apt-get -y upgrade
