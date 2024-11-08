@@ -278,8 +278,9 @@ def parse_element(bpmn_graph, counts, curr_el, parents, incoming_dict, outgoing_
         for seq_flow_id in incoming_dict:
             if incoming_dict[seq_flow_id][0] in nodes_dict:
                 incoming_dict[seq_flow_id] = (
-                nodes_dict[incoming_dict[seq_flow_id][0]], incoming_dict[seq_flow_id][1], incoming_dict[seq_flow_id][2],
-                incoming_dict[seq_flow_id][3], incoming_dict[seq_flow_id][4])
+                    nodes_dict[incoming_dict[seq_flow_id][0]], incoming_dict[seq_flow_id][1],
+                    incoming_dict[seq_flow_id][2],
+                    incoming_dict[seq_flow_id][3], incoming_dict[seq_flow_id][4])
         for seq_flow_id in outgoing_dict:
             if outgoing_dict[seq_flow_id][0] in nodes_dict:
                 outgoing_dict[seq_flow_id] = (nodes_dict[outgoing_dict[seq_flow_id][0]], outgoing_dict[seq_flow_id][1], outgoing_dict[seq_flow_id][2], outgoing_dict[seq_flow_id][3], outgoing_dict[seq_flow_id][4])
