@@ -6,7 +6,7 @@ from typing import Union, Set, List, Tuple, Collection, Any, Dict, Optional
 
 import pandas as pd
 
-from pm4py.objects.log.obj import EventLog, EventStream
+from pm4py.objects.log.obj import EventLog
 from pm4py.util import constants, xes_constants, pandas_utils, nx_utils
 import warnings
 from pm4py.util.pandas_utils import check_is_pandas_dataframe, check_pandas_dataframe_columns

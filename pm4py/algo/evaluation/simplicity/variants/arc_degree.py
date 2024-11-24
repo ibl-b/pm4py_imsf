@@ -1,4 +1,3 @@
-from statistics import mean
 from enum import Enum
 from pm4py.util import exec_utils
 from typing import Optional, Dict, Any, Union
@@ -48,6 +47,8 @@ def apply(petri_net: PetriNet, parameters: Optional[Dict[Union[str, Parameters],
         all_arc_degrees.append(len(place.in_arcs) + len(place.out_arcs))
     for trans in petri_net.transitions:
         all_arc_degrees.append(len(trans.in_arcs) + len(trans.out_arcs))
+
+    from statistics import mean
 
     mean_degree = mean(all_arc_degrees) if all_arc_degrees else 0.0
 

@@ -6,8 +6,7 @@ from typing import Union, Tuple, Any, List, Collection, Optional
 import pandas as pd
 import numpy as np
 from pm4py.objects.ocel.obj import OCEL
-from pm4py.objects.log.obj import EventLog, EventStream
-from pm4py.objects.conversion.log import converter as log_converter
+from pm4py.objects.log.obj import EventLog
 from pm4py.utils import __event_log_deprecation_warning
 import random
 from pm4py.util.pandas_utils import check_is_pandas_dataframe, check_pandas_dataframe_columns
@@ -106,6 +105,7 @@ def extract_outcome_enriched_dataframe(log: Union[EventLog, pd.DataFrame], activ
 
     properties = get_properties(log, activity_key=activity_key, case_id_key=case_id_key, timestamp_key=timestamp_key)
 
+    from pm4py.objects.conversion.log import converter as log_converter
     log = log_converter.apply(log, variant=log_converter.Variants.TO_DATA_FRAME, parameters=properties)
 
     from pm4py.util import pandas_utils

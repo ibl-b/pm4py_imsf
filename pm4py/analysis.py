@@ -4,7 +4,6 @@ __doc__ = """
 from typing import List, Optional, Tuple, Dict, Union, Generator, Set, Any
 
 from pm4py.objects.log.obj import Trace, EventLog, EventStream
-from pm4py.objects.conversion.log import converter as log_converter
 from pm4py.utils import __event_log_deprecation_warning
 from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.utils import get_properties, pandas_utils, constants
@@ -262,6 +261,7 @@ def insert_case_service_waiting_time(log: Union[EventLog, pd.DataFrame], service
 
     properties = get_properties(log, activity_key=activity_key, case_id_key=case_id_key, timestamp_key=timestamp_key)
 
+    from pm4py.objects.conversion.log import converter as log_converter
     log = log_converter.apply(log, variant=log_converter.Variants.TO_DATA_FRAME, parameters=properties)
 
     return pandas_utils.insert_case_service_waiting_time(log, case_id_column=case_id_key, timestamp_column=timestamp_key, start_timestamp_column=start_timestamp_key, service_time_column=service_time_column, waiting_time_column=waiting_time_column, sojourn_time_column=sojourn_time_column)
@@ -295,6 +295,7 @@ def insert_case_arrival_finish_rate(log: Union[EventLog, pd.DataFrame], arrival_
 
     properties = get_properties(log, activity_key=activity_key, case_id_key=case_id_key, timestamp_key=timestamp_key)
 
+    from pm4py.objects.conversion.log import converter as log_converter
     log = log_converter.apply(log, variant=log_converter.Variants.TO_DATA_FRAME, parameters=properties)
 
     return pandas_utils.insert_case_arrival_finish_rate(log, case_id_column=case_id_key, timestamp_column=timestamp_key, start_timestamp_column=start_timestamp_key, arrival_rate_column=arrival_rate_column, finish_rate_column=finish_rate_column)
