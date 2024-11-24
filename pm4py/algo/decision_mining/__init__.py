@@ -1,7 +1,9 @@
-from pm4py.algo.decision_mining import algorithm
+from pm4py.util import constants as pm4_constants
 
-from pm4py.util import constants
-import warnings
+if pm4_constants.ENABLE_INTERNAL_IMPORTS:
+    from pm4py.algo.decision_mining import algorithm
 
-if constants.SHOW_INTERNAL_WARNINGS:
-    warnings.warn("The decision_mining package will be removed in a future release.")
+    import warnings
+
+    if pm4_constants.SHOW_INTERNAL_WARNINGS:
+        warnings.warn("The decision_mining package will be removed in a future release.")
