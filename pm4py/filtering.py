@@ -3,6 +3,7 @@ The ``pm4py.filtering`` module contains the filtering features offered in ``pm4p
 """
 
 from typing import Union, Set, List, Tuple, Collection, Any, Dict, Optional
+from collections import Counter
 
 import pandas as pd
 

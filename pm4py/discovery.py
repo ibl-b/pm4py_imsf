@@ -3,6 +3,7 @@ The ``pm4py.discovery`` module contains the process discovery algorithms impleme
 """
 
 from typing import Tuple, Union, List, Dict, Any, Optional, Set
+from collections import Counter
 
 import pandas as pd
 from pandas import DataFrame
