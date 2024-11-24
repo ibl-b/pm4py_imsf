@@ -3,19 +3,18 @@ The ``pm4py.write`` module contains all funcationality related to writing files/
 """
 
 from pm4py.objects.bpmn.obj import BPMN
-from pm4py.objects.log.obj import EventLog, EventStream
+from pm4py.objects.log.obj import EventLog
 from pm4py.objects.ocel.obj import OCEL
 from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.objects.process_tree.obj import ProcessTree
 from pm4py.utils import __event_log_deprecation_warning
 import pandas as pd
-from typing import Union, Optional, Collection, Tuple, Dict
+from typing import Union, Tuple, Dict
 from pm4py.util import constants
 from pm4py.util.pandas_utils import check_is_pandas_dataframe, check_pandas_dataframe_columns
-from pm4py.objects.log.obj import XESExtension
 
 
-def write_xes(log: Union[EventLog, pd.DataFrame], file_path: str, case_id_key: str = "case:concept:name", extensions: Optional[Collection[XESExtension]] = None, encoding: str = constants.DEFAULT_ENCODING, **kwargs) -> None:
+def write_xes(log: Union[EventLog, pd.DataFrame], file_path: str, case_id_key: str = "case:concept:name", extensions = None, encoding: str = constants.DEFAULT_ENCODING, **kwargs) -> None:
     """
     Writes an event log to disk in the XES format (see `xes-standard <https://xes-standard.org/>`_)
 

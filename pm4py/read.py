@@ -5,14 +5,11 @@ from pm4py.objects.log.obj import EventLog
 from pm4py.objects.ocel.obj import OCEL
 from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.objects.process_tree.obj import ProcessTree
-from pm4py.objects.conversion.log import converter as log_converter
-from pm4py.objects.log.util import dataframe_utils
 from pm4py.util import constants
 
 import os
 
 from pandas import DataFrame
-import importlib.util
 from typing import Union
 
 INDEX_COLUMN = "@@index"
@@ -71,6 +68,7 @@ def read_xes(file_path: str, variant: Optional[str] = None, return_legacy_log_ob
     log = xes_importer.apply(file_path, variant=v, parameters=parameters)
 
     if type(log) is EventLog and not return_legacy_log_object:
+        from pm4py.objects.conversion.log import converter as log_converter
         log = log_converter.apply(log, variant=log_converter.Variants.TO_DATA_FRAME)
 
     return log

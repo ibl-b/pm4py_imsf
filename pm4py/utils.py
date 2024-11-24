@@ -6,7 +6,7 @@ from typing import Optional, Tuple, Any, Collection, Union, List
 
 import pandas as pd
 
-from pm4py.objects.log.obj import EventLog, EventStream, Trace, Event
+from pm4py.objects.log.obj import EventLog, EventStream, Trace
 from pm4py.objects.process_tree.obj import ProcessTree
 from pm4py.objects.powl.obj import POWL
 from pm4py.objects.ocel.obj import OCEL
