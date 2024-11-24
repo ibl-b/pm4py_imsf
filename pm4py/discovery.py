@@ -7,10 +7,6 @@ from typing import Tuple, Union, List, Dict, Any, Optional, Set
 import pandas as pd
 from pandas import DataFrame
 
-from pm4py.algo.discovery.powl.inductive.utils.filtering import FILTERING_THRESHOLD
-from pm4py.algo.discovery.powl.inductive.variants.dynamic_clustering_frequency.dynamic_clustering_frequency_partial_order_cut import \
-    ORDER_FREQUENCY_RATIO
-from pm4py.algo.discovery.powl.inductive.variants.powl_discovery_varaints import POWLDiscoveryVariant
 from pm4py.objects.bpmn.obj import BPMN
 from pm4py.objects.dfg.obj import DFG
 from pm4py.objects.powl.obj import POWL
@@ -744,7 +740,7 @@ def discover_declare(log: Union[EventLog, pd.DataFrame], allowed_templates: Opti
     return declare_discovery.apply(log, parameters=properties)
 
 
-def discover_powl(log: Union[EventLog, pd.DataFrame], variant=POWLDiscoveryVariant.MAXIMAL,
+def discover_powl(log: Union[EventLog, pd.DataFrame], variant=None,
                   filtering_weight_factor: float = 0.0, order_graph_filtering_threshold: float = None,
                   activity_key: str = "concept:name", timestamp_key: str = "time:timestamp",
                   case_id_key: str = "case:concept:name") -> POWL:
@@ -771,6 +767,13 @@ def discover_powl(log: Union[EventLog, pd.DataFrame], variant=POWLDiscoveryVaria
         powl_model = pm4py.discover_powl(log, activity_key='concept:name')
         print(powl_model)
     """
+    from pm4py.algo.discovery.powl.inductive.variants.dynamic_clustering_frequency.dynamic_clustering_frequency_partial_order_cut import \
+        ORDER_FREQUENCY_RATIO
+    from pm4py.algo.discovery.powl.inductive.variants.powl_discovery_varaints import POWLDiscoveryVariant
+
+    if variant is None:
+        variant = POWLDiscoveryVariant.MAXIMAL
+
     __event_log_deprecation_warning(log)
 
     if check_is_pandas_dataframe(log):
@@ -787,7 +790,7 @@ def discover_powl(log: Union[EventLog, pd.DataFrame], variant=POWLDiscoveryVaria
         else:
             raise Exception("the order graph filtering threshold can only be used for the variant DYNAMIC_CLUSTERING")
 
-    properties[FILTERING_THRESHOLD] = filtering_weight_factor
+    properties["filtering_threshold"] = filtering_weight_factor
 
     from pm4py.algo.discovery.powl import algorithm as powl_discovery
     return powl_discovery.apply(log, variant=variant, parameters=properties)
