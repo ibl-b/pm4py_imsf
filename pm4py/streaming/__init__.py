@@ -1,1 +1,4 @@
-from pm4py.streaming import algo, stream, importer, util, conversion
+from pm4py.util import constants as pm4_constants
+
+if pm4_constants.ENABLE_INTERNAL_IMPORTS:
+    from pm4py.streaming import algo, stream, importer, util, conversion
