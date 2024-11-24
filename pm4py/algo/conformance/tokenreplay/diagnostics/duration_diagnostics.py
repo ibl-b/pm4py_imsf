@@ -3,7 +3,6 @@ from copy import deepcopy
 from pm4py.objects.log.util import basic_filter
 from pm4py.util import xes_constants as xes
 
-from statistics import median
 from enum import Enum
 from pm4py.util import exec_utils
 from pm4py.util import constants
@@ -49,6 +48,8 @@ def get_median_case_duration(list_cases, timestamp_key=xes.DEFAULT_TIMESTAMP_KEY
     median_case_duration
         Median case duration
     """
+    from statistics import median
+
     durations = []
     for trace in list_cases:
         durations.append(get_case_duration(trace, timestamp_key=timestamp_key))

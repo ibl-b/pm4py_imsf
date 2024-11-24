@@ -12,7 +12,7 @@ import pandas as pd
 from pm4py.objects.bpmn.obj import BPMN
 from pm4py.objects.powl.obj import POWL
 from pm4py.objects.heuristics_net.obj import HeuristicsNet
-from pm4py.objects.log.obj import EventLog, EventStream
+from pm4py.objects.log.obj import EventLog
 from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.objects.process_tree.obj import ProcessTree
 from pm4py.util.pandas_utils import check_is_pandas_dataframe, check_pandas_dataframe_columns
