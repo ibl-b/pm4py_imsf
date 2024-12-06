@@ -133,7 +133,7 @@ def discover_dfg_typed(log: pd.DataFrame, case_id_key: str = "case:concept:name"
         raise TypeError('pm4py.discover_dfg_typed is only defined for DataFrames')
 
 
-def discover_performance_dfg(log: Union[EventLog, pd.DataFrame], business_hours: bool = False, business_hour_slots=constants.DEFAULT_BUSINESS_HOUR_SLOTS, workcalendar=constants.DEFAULT_BUSINESS_HOURS_WORKCALENDAR, activity_key: str = "concept:name", timestamp_key: str = "time:timestamp", case_id_key: str = "case:concept:name") -> Tuple[dict, dict, dict]:
+def discover_performance_dfg(log: Union[EventLog, pd.DataFrame], business_hours: bool = False, business_hour_slots=constants.DEFAULT_BUSINESS_HOUR_SLOTS, workcalendar=constants.DEFAULT_BUSINESS_HOURS_WORKCALENDAR, activity_key: str = "concept:name", timestamp_key: str = "time:timestamp", case_id_key: str = "case:concept:name", perf_aggregation_key: str = "all") -> Tuple[dict, dict, dict]:
     """
     Discovers a Performance Directly-Follows Graph from an event log.
 
@@ -155,6 +155,7 @@ def discover_performance_dfg(log: Union[EventLog, pd.DataFrame], business_hours:
     :param activity_key: Attribute to be used for the activity (default: "concept:name").
     :param timestamp_key: Attribute to be used for the timestamp (default: "time:timestamp").
     :param case_id_key: Attribute to be used as case identifier (default: "case:concept:name").
+    :param perf_aggregation_key: Selector for the type of aggregation (all, mean, median, max, min, sum, stdev)
     :return: A tuple of three dictionaries: (performance_dfg, start_activities, end_activities).
     :rtype: ``Tuple[dict, dict, dict]``
 
@@ -180,7 +181,7 @@ def discover_performance_dfg(log: Union[EventLog, pd.DataFrame], business_hours:
         from pm4py.util import constants
 
         from pm4py.algo.discovery.dfg.adapters.pandas.df_statistics import get_dfg_graph
-        dfg = get_dfg_graph(log, activity_key=activity_key, timestamp_key=timestamp_key, case_id_glue=case_id_key, measure="performance", perf_aggregation_key="all",
+        dfg = get_dfg_graph(log, activity_key=activity_key, timestamp_key=timestamp_key, case_id_glue=case_id_key, measure="performance", perf_aggregation_key=perf_aggregation_key,
                             business_hours=business_hours, business_hours_slot=business_hour_slots, workcalendar=workcalendar)
         from pm4py.statistics.start_activities.pandas import get as start_activities_module
         from pm4py.statistics.end_activities.pandas import get as end_activities_module
@@ -190,7 +191,7 @@ def discover_performance_dfg(log: Union[EventLog, pd.DataFrame], business_hours:
             log, parameters=properties)
     else:
         from pm4py.algo.discovery.dfg.variants import performance as dfg_discovery
-        properties[dfg_discovery.Parameters.AGGREGATION_MEASURE] = "all"
+        properties[dfg_discovery.Parameters.AGGREGATION_MEASURE] = perf_aggregation_key
         properties[dfg_discovery.Parameters.BUSINESS_HOURS] = business_hours
         properties[dfg_discovery.Parameters.BUSINESS_HOUR_SLOTS] = business_hour_slots
         dfg = dfg_discovery.apply(log, parameters=properties)
