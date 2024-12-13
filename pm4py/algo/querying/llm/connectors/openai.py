@@ -1,3 +1,4 @@
+import sys
 from enum import Enum
 from pm4py.util import exec_utils
 from typing import Optional, Dict, Any
@@ -28,6 +29,7 @@ def apply(prompt: str, parameters: Optional[Dict[Any, Any]] = None) -> str:
     api_key = exec_utils.get_param_value(Parameters.API_KEY, parameters, constants.OPENAI_API_KEY)
     api_url = exec_utils.get_param_value(Parameters.API_URL, parameters, None)
     simple_content_specification = image_path is None
+    max_tokens = exec_utils.get_param_value(Parameters.MAX_TOKENS, parameters, None)
 
     if api_url is None:
         api_url = constants.OPENAI_API_URL
@@ -60,6 +62,9 @@ def apply(prompt: str, parameters: Optional[Dict[Any, Any]] = None) -> str:
         messages[0]["content"].append({"type": "image_url", "image_url": {"url": f"data:image/{image_format};base64,{base64_image}"}})
         payload["max_tokens"] = max_tokens
 
+    if max_tokens is not None:
+        payload["max_tokens"] = max_tokens
+    
     payload["messages"] = messages
 
     response = requests.post(api_url+"chat/completions", headers=headers, json=payload).json()

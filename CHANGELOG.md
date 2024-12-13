@@ -1,15 +1,35 @@
 # Changelog of pm4py
 
 
-## pm4py 2.7.15 (2024.07.XX)
+## pm4py 2.7.15 (2024.12.XX)
 
 ### Added
 
 ### Changed
+* 102c5fa10a5755b45b6ed5c8e6e3587c609defbe
+  * updated connectors in pm4py.llm package
+* 589fc151b78b41a18fc4d7767b9ee9f84d8ef10c
+  * fix problem with BPMN importing
+* f4e87f752074e32cf117daf3fd4d683b47a12398
+  * module pre-importing on-request
+* a832282e7b95a3010a7c5a41f08d447a6d5fc004
+  * simplified simplified interface imports
+* bf0087b9cb7898e93d9a9c58ec0176f559675692
+  * updated RSTs
+* 9771d21db743250b02ba0202d8f65735a24f67ee
+  * revised documentation of pm4py
 
 ### Deprecated
 
 ### Fixed
+* 57a4cbecf1fb1f58368bdc0ea6862c6aa42ef147
+  * escaping activities names before adding them to regex
+* ab2aa78a46b08edb10665f72dab82fec2d4fd89d
+  * refactored simplified interface docstrings
+* e750451515444877e7e85ae25adbfbac77bf0048
+  * updated URLs in getting started
+* ddbd25a0e10e13ec861ff5da89bcabbb6e468827
+  * hotfix BPMN layouting
 
 ### Removed
 
