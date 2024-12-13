@@ -1046,7 +1046,7 @@ def save_vis_events_distribution_graph(log: Union[EventLog, pd.DataFrame], file_
     return graphs_visualizer.save(gviz, file_path)
 
 
-def view_ocdfg(ocdfg: Dict[str, Any], annotation: str = "frequency", act_metric: str = "events", edge_metric="event_couples", act_threshold: int = 0, edge_threshold: int = 0, performance_aggregation: str = "mean", format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW, bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None):
+def view_ocdfg(ocdfg: Dict[str, Any], annotation: str = "frequency", act_metric: str = "events", edge_metric="event_couples", act_threshold: int = 0, edge_threshold: int = 0, performance_aggregation: str = "mean", format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW, bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None, variant_str: str = "classic"):
     """
     Views an OC-DFG (object-centric directly-follows graph) with the provided configuration.
 
@@ -1063,6 +1063,7 @@ def view_ocdfg(ocdfg: Dict[str, Any], annotation: str = "frequency", act_metric:
     :param bgcolor: Background color of the visualization (default: white)
     :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
     :param graph_title: Sets the title of the visualization (if provided)
+    :param variant_str: variant of the visualization to be used ("classic" or "elkjs")
 
     .. code-block:: python3
 
@@ -1074,15 +1075,14 @@ def view_ocdfg(ocdfg: Dict[str, Any], annotation: str = "frequency", act_metric:
     format = str(format).lower()
 
     from pm4py.visualization.ocel.ocdfg import visualizer
-    from pm4py.visualization.ocel.ocdfg.variants import classic
     parameters = {}
-    parameters[classic.Parameters.FORMAT] = format
-    parameters[classic.Parameters.ANNOTATION] = annotation
-    parameters[classic.Parameters.ACT_METRIC] = act_metric
-    parameters[classic.Parameters.EDGE_METRIC] = edge_metric
-    parameters[classic.Parameters.ACT_THRESHOLD] = act_threshold
-    parameters[classic.Parameters.EDGE_THRESHOLD] = edge_threshold
-    parameters[classic.Parameters.PERFORMANCE_AGGREGATION_MEASURE] = performance_aggregation
+    parameters["format"] = format
+    parameters["annotation"] = annotation
+    parameters["act_metric"] = act_metric
+    parameters["edge_metric"] = edge_metric
+    parameters["act_threshold"] = act_threshold
+    parameters["edge_threshold"] = edge_threshold
+    parameters["aggregation_measure"] = performance_aggregation
     parameters["bgcolor"] = bgcolor
     parameters["rankdir"] = rankdir
     parameters["enable_graph_title"] = constants.DEFAULT_ENABLE_GRAPH_TITLES
@@ -1090,11 +1090,13 @@ def view_ocdfg(ocdfg: Dict[str, Any], annotation: str = "frequency", act_metric:
         parameters["enable_graph_title"] = True
         parameters["graph_title"] = graph_title
 
-    gviz = classic.apply(ocdfg, parameters=parameters)
-    visualizer.view(gviz)
+    variant = visualizer.Variants.CLASSIC if variant_str == "classic" else visualizer.Variants.ELKJS
+
+    gviz = visualizer.apply(ocdfg, variant=variant, parameters=parameters)
+    visualizer.view(gviz, variant=variant)
 
 
-def save_vis_ocdfg(ocdfg: Dict[str, Any], file_path: str, annotation: str = "frequency", act_metric: str = "events", edge_metric="event_couples", act_threshold: int = 0, edge_threshold: int = 0, performance_aggregation: str = "mean", bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None, **kwargs):
+def save_vis_ocdfg(ocdfg: Dict[str, Any], file_path: str, annotation: str = "frequency", act_metric: str = "events", edge_metric="event_couples", act_threshold: int = 0, edge_threshold: int = 0, performance_aggregation: str = "mean", bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None, variant_str: str = "classic", **kwargs):
     """
     Saves the visualization of an OC-DFG (object-centric directly-follows graph) with the provided configuration.
 
@@ -1111,6 +1113,7 @@ def save_vis_ocdfg(ocdfg: Dict[str, Any], file_path: str, annotation: str = "fre
     :param bgcolor: Background color of the visualization (default: white)
     :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
     :param graph_title: Sets the title of the visualization (if provided)
+    :param variant_str: variant of the visualization to be used ("classic" or "elkjs")
 
     .. code-block:: python3
 
@@ -1122,15 +1125,14 @@ def save_vis_ocdfg(ocdfg: Dict[str, Any], file_path: str, annotation: str = "fre
     file_path = str(file_path)
     format = os.path.splitext(file_path)[1][1:].lower()
     from pm4py.visualization.ocel.ocdfg import visualizer
-    from pm4py.visualization.ocel.ocdfg.variants import classic
     parameters = {}
-    parameters[classic.Parameters.FORMAT] = format
-    parameters[classic.Parameters.ANNOTATION] = annotation
-    parameters[classic.Parameters.ACT_METRIC] = act_metric
-    parameters[classic.Parameters.EDGE_METRIC] = edge_metric
-    parameters[classic.Parameters.ACT_THRESHOLD] = act_threshold
-    parameters[classic.Parameters.EDGE_THRESHOLD] = edge_threshold
-    parameters[classic.Parameters.PERFORMANCE_AGGREGATION_MEASURE] = performance_aggregation
+    parameters["format"] = format
+    parameters["annotation"] = annotation
+    parameters["act_metric"] = act_metric
+    parameters["edge_metric"] = edge_metric
+    parameters["act_threshold"] = act_threshold
+    parameters["edge_threshold"] = edge_threshold
+    parameters["aggregation_measure"] = performance_aggregation
     parameters["bgcolor"] = bgcolor
     parameters["rankdir"] = rankdir
     parameters["enable_graph_title"] = constants.DEFAULT_ENABLE_GRAPH_TITLES
@@ -1138,8 +1140,9 @@ def save_vis_ocdfg(ocdfg: Dict[str, Any], file_path: str, annotation: str = "fre
         parameters["enable_graph_title"] = True
         parameters["graph_title"] = graph_title
 
-    gviz = classic.apply(ocdfg, parameters=parameters)
-    return visualizer.save(gviz, file_path)
+    variant = visualizer.Variants.CLASSIC if variant_str == "classic" else visualizer.Variants.ELKJS
+    gviz = visualizer.apply(ocdfg, variant=variant, parameters=parameters)
+    return visualizer.save(gviz, file_path, variant=variant)
 
 
 def view_ocpn(ocpn: Dict[str, Any], format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW, bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None):
