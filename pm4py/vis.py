@@ -1021,6 +1021,7 @@ def view_ocdfg(ocdfg: Dict[str, Any], annotation: str = "frequency", act_metric:
     :param bgcolor: Background color of the visualization (default: white)
     :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
     :param graph_title: Sets the title of the visualization (if provided)
+    :param variant_str: variant of the visualization to be used ("classic" or "elkjs")
 
     .. code-block:: python3
 
@@ -1070,6 +1071,7 @@ def save_vis_ocdfg(ocdfg: Dict[str, Any], file_path: str, annotation: str = "fre
     :param bgcolor: Background color of the visualization (default: white)
     :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
     :param graph_title: Sets the title of the visualization (if provided)
+    :param variant_str: variant of the visualization to be used ("classic" or "elkjs")
 
     .. code-block:: python3
 
