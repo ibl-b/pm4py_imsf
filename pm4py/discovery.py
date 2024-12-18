@@ -981,3 +981,56 @@ def discover_batches(log: Union[EventLog, pd.DataFrame], merge_distance: int = 1
 
     from pm4py.algo.discovery.batches import algorithm as batches_discovery
     return batches_discovery.apply(log, parameters=properties)
+
+
+def correlation_miner(df: pd.DataFrame, annotation: str = "frequency", activity_key: str = "concept:name", timestamp_key: str = "time:timestamp") -> Tuple[dict, dict, dict]:
+    """
+    Applies the Correlation Miner to 'discover' the frequency/performance DFG from an event log without case ID.
+
+    The approach is described in:
+    Pourmirza, Shaya, Remco Dijkman, and Paul Grefen. "Correlation miner: mining business process models and event
+    correlations without case identifiers." International Journal of Cooperative Information Systems 26.02 (2017):
+    1742002.
+    
+    :param log: Pandas dataframe
+    :param annotation: annotation ('frequency' for the frequency DFG, or 'performance' for the performance DFG)
+    :param activity_key: attribute to be used for the activity
+    :param timestamp_key: attribute to be used for the timestamp
+    :rtype: ``Tuple[dict, dict, dict]``
+
+    .. code-block:: python3
+
+        import pm4py
+
+        log = pm4py.read_xes("tests/input_data/running-example.xes")
+        log = log[["concept:name", "time:timestamp"]]
+
+        dfg, sa, ea = pm4py.correlation_miner(log)
+        pm4py.view_dfg(dfg, sa, ea, format="svg")
+
+        perf_dfg, sa, ea = pm4py.correlation_miner(log, annotation="performance")
+        pm4py.view_performance_dfg(perf_dfg, sa, ea, format="svg")
+    """
+    properties = get_properties(df, activity_key=activity_key, timestamp_key=timestamp_key)
+
+    first_activity = df[activity_key].iloc[0]
+    last_activity = df[activity_key].iloc[-1]
+
+    from pm4py.algo.discovery.correlation_mining import algorithm as correlation_miner
+    dfg, perf_dfg = correlation_miner.apply(df, parameters=properties)
+    perf_dfg = {a: float(y) for a, y in perf_dfg.items()}
+
+    activities_entering = Counter()
+    activities_exiting = Counter()
+
+    for edge, freq in dfg.items():
+        activities_exiting[edge[0]] += freq
+        activities_entering[edge[1]] += freq
+
+    start_activities = {first_activity: activities_exiting[first_activity]}
+    end_activities = {last_activity: activities_entering[last_activity]}
+
+    if annotation == "frequency":
+        return dfg, start_activities, end_activities
+    else:
+        return perf_dfg, start_activities, end_activities
