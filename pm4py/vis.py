@@ -27,7 +27,7 @@ from pm4py.util import constants
 def view_petri_net(petri_net: PetriNet, initial_marking: Optional[Marking] = None,
                    final_marking: Optional[Marking] = None, format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW, bgcolor: str = "white",
                    decorations: Dict[Any, Any] = None, debug: bool = False, rankdir: str = constants.DEFAULT_RANKDIR_GVIZ,
-                   graph_title: Optional[str] = None):
+                   graph_title: Optional[str] = None, variant_str: str = "wo_decoration", log: Optional[Union[EventLog, pd.DataFrame]] = None):
     """
     Views a (composite) Petri net
 
@@ -40,6 +40,10 @@ def view_petri_net(petri_net: PetriNet, initial_marking: Optional[Marking] = Non
     :param debug: Boolean enabling/disabling the debug mode (show place and transition's names)
     :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
     :param graph_title: Sets the title of the visualization (if provided)
+    :param variant_str: the variant to be used (possible values:
+    'wo_decoration', 'token_decoration_frequency', 'token_decoration_performance', 'greedy_decoration_frequency',
+    'greedy_decoration_performance', 'alignments')
+    :param log: the event log or Pandas dataframe that should be used
 
     .. code-block:: python3
 
@@ -50,19 +54,36 @@ def view_petri_net(petri_net: PetriNet, initial_marking: Optional[Marking] = Non
     """
     format = str(format).lower()
     from pm4py.visualization.petri_net import visualizer as pn_visualizer
-    parameters = {pn_visualizer.Variants.WO_DECORATION.value.Parameters.FORMAT: format, "bgcolor": bgcolor, "decorations": decorations, "debug": debug, "set_rankdir": rankdir}
+    variant = None
+    if variant_str == "wo_decoration":
+        variant = pn_visualizer.Variants.WO_DECORATION
+    elif variant_str == "token_decoration_frequency":
+        variant = pn_visualizer.Variants.FREQUENCY
+    elif variant_str == "token_decoration_performance":
+        variant = pn_visualizer.Variants.PERFORMANCE
+    elif variant_str == "greedy_decoration_frequency":
+        variant = pn_visualizer.Variants.FREQUENCY_GREEDY
+    elif variant_str == "greedy_decoration_performance":
+        variant = pn_visualizer.Variants.PERFORMANCE_GREEDY
+    elif variant_str == "alignments":
+        variant = pn_visualizer.Variants.ALIGNMENTS
+
+    if variant_str != "wo_decoration" and log is None:
+        raise Exception("the provision of the 'log' parameter is essential for decoration purposes.")
+
+    parameters = {"format": format, "bgcolor": bgcolor, "decorations": decorations, "debug": debug, "set_rankdir": rankdir}
     parameters["enable_graph_title"] = constants.DEFAULT_ENABLE_GRAPH_TITLES
     if graph_title:
         parameters["enable_graph_title"] = True
         parameters["graph_title"] = graph_title
     gviz = pn_visualizer.apply(petri_net, initial_marking, final_marking,
-                               parameters=parameters)
+                               log=log, variant=variant, parameters=parameters)
     pn_visualizer.view(gviz)
 
 
 def save_vis_petri_net(petri_net: PetriNet, initial_marking: Marking, final_marking: Marking, file_path: str, bgcolor: str = "white",
                    decorations: Dict[Any, Any] = None, debug: bool = False, rankdir: str = constants.DEFAULT_RANKDIR_GVIZ,
-                    graph_title: Optional[str] = None, **kwargs):
+                    graph_title: Optional[str] = None, variant_str: str = "wo_decoration", log: Optional[Union[EventLog, pd.DataFrame]] = None, **kwargs):
     """
     Saves a Petri net visualization to a file
 
@@ -75,6 +96,10 @@ def save_vis_petri_net(petri_net: PetriNet, initial_marking: Marking, final_mark
     :param debug: Boolean enabling/disabling the debug mode (show place and transition's names)
     :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
     :param graph_title: Sets the title of the visualization (if provided)
+    :param variant_str: the variant to be used (possible values:
+    'wo_decoration', 'token_decoration_frequency', 'token_decoration_performance', 'greedy_decoration_frequency',
+    'greedy_decoration_performance', 'alignments')
+    :param log: the event log or Pandas dataframe that should be used
 
     .. code-block:: python3
 
@@ -86,13 +111,30 @@ def save_vis_petri_net(petri_net: PetriNet, initial_marking: Marking, final_mark
     file_path = str(file_path)
     format = os.path.splitext(file_path)[1][1:].lower()
     from pm4py.visualization.petri_net import visualizer as pn_visualizer
-    parameters = {pn_visualizer.Variants.WO_DECORATION.value.Parameters.FORMAT: format, "bgcolor": bgcolor, "decorations": decorations, "debug": debug, "set_rankdir": rankdir}
+    variant = None
+    if variant_str == "wo_decoration":
+        variant = pn_visualizer.Variants.WO_DECORATION
+    elif variant_str == "token_decoration_frequency":
+        variant = pn_visualizer.Variants.FREQUENCY
+    elif variant_str == "token_decoration_performance":
+        variant = pn_visualizer.Variants.PERFORMANCE
+    elif variant_str == "greedy_decoration_frequency":
+        variant = pn_visualizer.Variants.FREQUENCY_GREEDY
+    elif variant_str == "greedy_decoration_performance":
+        variant = pn_visualizer.Variants.PERFORMANCE_GREEDY
+    elif variant_str == "alignments":
+        variant = pn_visualizer.Variants.ALIGNMENTS
+
+    if variant_str != "wo_decoration" and log is None:
+        raise Exception("the provision of the 'log' parameter is essential for decoration purposes.")
+
+    parameters = {"format": format, "bgcolor": bgcolor, "decorations": decorations, "debug": debug, "set_rankdir": rankdir}
     parameters["enable_graph_title"] = constants.DEFAULT_ENABLE_GRAPH_TITLES
     if graph_title:
         parameters["enable_graph_title"] = True
         parameters["graph_title"] = graph_title
     gviz = pn_visualizer.apply(petri_net, initial_marking, final_marking,
-                               parameters=parameters)
+                               log=log, variant=variant, parameters=parameters)
     return pn_visualizer.save(gviz, file_path)
 
 
@@ -1004,7 +1046,7 @@ def save_vis_events_distribution_graph(log: Union[EventLog, pd.DataFrame], file_
     return graphs_visualizer.save(gviz, file_path)
 
 
-def view_ocdfg(ocdfg: Dict[str, Any], annotation: str = "frequency", act_metric: str = "events", edge_metric="event_couples", act_threshold: int = 0, edge_threshold: int = 0, performance_aggregation: str = "mean", format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW, bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None):
+def view_ocdfg(ocdfg: Dict[str, Any], annotation: str = "frequency", act_metric: str = "events", edge_metric="event_couples", act_threshold: int = 0, edge_threshold: int = 0, performance_aggregation: str = "mean", format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW, bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None, variant_str: str = "classic"):
     """
     Views an OC-DFG (object-centric directly-follows graph) with the provided configuration.
 
@@ -1021,6 +1063,7 @@ def view_ocdfg(ocdfg: Dict[str, Any], annotation: str = "frequency", act_metric:
     :param bgcolor: Background color of the visualization (default: white)
     :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
     :param graph_title: Sets the title of the visualization (if provided)
+    :param variant_str: variant of the visualization to be used ("classic" or "elkjs")
 
     .. code-block:: python3
 
@@ -1032,15 +1075,14 @@ def view_ocdfg(ocdfg: Dict[str, Any], annotation: str = "frequency", act_metric:
     format = str(format).lower()
 
     from pm4py.visualization.ocel.ocdfg import visualizer
-    from pm4py.visualization.ocel.ocdfg.variants import classic
     parameters = {}
-    parameters[classic.Parameters.FORMAT] = format
-    parameters[classic.Parameters.ANNOTATION] = annotation
-    parameters[classic.Parameters.ACT_METRIC] = act_metric
-    parameters[classic.Parameters.EDGE_METRIC] = edge_metric
-    parameters[classic.Parameters.ACT_THRESHOLD] = act_threshold
-    parameters[classic.Parameters.EDGE_THRESHOLD] = edge_threshold
-    parameters[classic.Parameters.PERFORMANCE_AGGREGATION_MEASURE] = performance_aggregation
+    parameters["format"] = format
+    parameters["annotation"] = annotation
+    parameters["act_metric"] = act_metric
+    parameters["edge_metric"] = edge_metric
+    parameters["act_threshold"] = act_threshold
+    parameters["edge_threshold"] = edge_threshold
+    parameters["aggregation_measure"] = performance_aggregation
     parameters["bgcolor"] = bgcolor
     parameters["rankdir"] = rankdir
     parameters["enable_graph_title"] = constants.DEFAULT_ENABLE_GRAPH_TITLES
@@ -1048,11 +1090,13 @@ def view_ocdfg(ocdfg: Dict[str, Any], annotation: str = "frequency", act_metric:
         parameters["enable_graph_title"] = True
         parameters["graph_title"] = graph_title
 
-    gviz = classic.apply(ocdfg, parameters=parameters)
-    visualizer.view(gviz)
+    variant = visualizer.Variants.CLASSIC if variant_str == "classic" else visualizer.Variants.ELKJS
+
+    gviz = visualizer.apply(ocdfg, variant=variant, parameters=parameters)
+    visualizer.view(gviz, variant=variant)
 
 
-def save_vis_ocdfg(ocdfg: Dict[str, Any], file_path: str, annotation: str = "frequency", act_metric: str = "events", edge_metric="event_couples", act_threshold: int = 0, edge_threshold: int = 0, performance_aggregation: str = "mean", bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None, **kwargs):
+def save_vis_ocdfg(ocdfg: Dict[str, Any], file_path: str, annotation: str = "frequency", act_metric: str = "events", edge_metric="event_couples", act_threshold: int = 0, edge_threshold: int = 0, performance_aggregation: str = "mean", bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None, variant_str: str = "classic", **kwargs):
     """
     Saves the visualization of an OC-DFG (object-centric directly-follows graph) with the provided configuration.
 
@@ -1069,6 +1113,7 @@ def save_vis_ocdfg(ocdfg: Dict[str, Any], file_path: str, annotation: str = "fre
     :param bgcolor: Background color of the visualization (default: white)
     :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
     :param graph_title: Sets the title of the visualization (if provided)
+    :param variant_str: variant of the visualization to be used ("classic" or "elkjs")
 
     .. code-block:: python3
 
@@ -1080,15 +1125,14 @@ def save_vis_ocdfg(ocdfg: Dict[str, Any], file_path: str, annotation: str = "fre
     file_path = str(file_path)
     format = os.path.splitext(file_path)[1][1:].lower()
     from pm4py.visualization.ocel.ocdfg import visualizer
-    from pm4py.visualization.ocel.ocdfg.variants import classic
     parameters = {}
-    parameters[classic.Parameters.FORMAT] = format
-    parameters[classic.Parameters.ANNOTATION] = annotation
-    parameters[classic.Parameters.ACT_METRIC] = act_metric
-    parameters[classic.Parameters.EDGE_METRIC] = edge_metric
-    parameters[classic.Parameters.ACT_THRESHOLD] = act_threshold
-    parameters[classic.Parameters.EDGE_THRESHOLD] = edge_threshold
-    parameters[classic.Parameters.PERFORMANCE_AGGREGATION_MEASURE] = performance_aggregation
+    parameters["format"] = format
+    parameters["annotation"] = annotation
+    parameters["act_metric"] = act_metric
+    parameters["edge_metric"] = edge_metric
+    parameters["act_threshold"] = act_threshold
+    parameters["edge_threshold"] = edge_threshold
+    parameters["aggregation_measure"] = performance_aggregation
     parameters["bgcolor"] = bgcolor
     parameters["rankdir"] = rankdir
     parameters["enable_graph_title"] = constants.DEFAULT_ENABLE_GRAPH_TITLES
@@ -1096,8 +1140,9 @@ def save_vis_ocdfg(ocdfg: Dict[str, Any], file_path: str, annotation: str = "fre
         parameters["enable_graph_title"] = True
         parameters["graph_title"] = graph_title
 
-    gviz = classic.apply(ocdfg, parameters=parameters)
-    return visualizer.save(gviz, file_path)
+    variant = visualizer.Variants.CLASSIC if variant_str == "classic" else visualizer.Variants.ELKJS
+    gviz = visualizer.apply(ocdfg, variant=variant, parameters=parameters)
+    return visualizer.save(gviz, file_path, variant=variant)
 
 
 def view_ocpn(ocpn: Dict[str, Any], format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW, bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None):
