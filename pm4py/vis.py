@@ -1,12 +1,24 @@
 __doc__ = """
-The ``pm4py.vis`` module contains the visualizations offered in ``pm4py``
+The `pm4py.vis` module contains the visualizations offered in pm4py.
 
-Note for Graphviz-based visualizations (e.g., Petri nets, DFGs, BPMN, process trees):
-Supported formats include:
-- png
-- svg
-- pdf
-- gv (returns/saves the Dot code)
+**Note on Graphviz-based visualizations (e.g., Petri nets, DFGs, BPMN, process trees):**
+
+Supported output formats include:
+
+- **png**: Generates a PNG image.
+- **svg**: Generates an SVG image, which can be scaled without loss of quality.
+- **pdf**: Generates a PDF file, suitable for printing and embedding in documents.
+- **gv**: Returns or saves the Dot source code of the Graphviz graph.
+- **html**: When 'html' is provided as the format, the visualization is rendered in an HTML page using GraphvizJS. This allows interactive viewing of the graph directly in a web browser.
+
+If `html` is used, an HTML file containing the GraphvizJS-based rendering is produced, enabling panning, zooming, and other interactive features.
+
+In general, for Graphviz-based visualizations, if you provide a format extension, the visualization will be generated accordingly. For example:
+- `format='png'` will produce a PNG file.
+- `format='svg'` will produce an SVG file.
+- `format='pdf'` will produce a PDF file.
+- `format='gv'` will return/save the raw Dot code.
+- `format='html'` will produce an interactive HTML visualization using GraphvizJS.
 """
 
 import os
@@ -62,7 +74,7 @@ def _select_petri_net_variant(variant_str: str, pn_visualizer, log: Optional[Uni
     }
     variant = variants_map.get(variant_str, pn_visualizer.Variants.WO_DECORATION)
     if variant_str != "wo_decoration" and log is None:
-        raise Exception("the provision of the 'log' parameter is essential for decoration purposes.")
+        raise Exception("The 'log' parameter must be provided for decoration purposes.")
     return variant
 
 
@@ -71,21 +83,21 @@ def view_petri_net(petri_net: PetriNet, initial_marking: Optional[Marking] = Non
                    decorations: Dict[Any, Any] = None, debug: bool = False, rankdir: str = constants.DEFAULT_RANKDIR_GVIZ,
                    graph_title: Optional[str] = None, variant_str: str = "wo_decoration", log: Optional[Union[EventLog, pd.DataFrame]] = None):
     """
-    Views a (composite) Petri net
+    Views a (composite) Petri net.
 
     :param petri_net: Petri net
     :param initial_marking: Initial marking
     :param final_marking: Final marking
-    :param format: Format of the output picture (if html is provided, GraphvizJS is used to render the visualization in an HTML page)
+    :param format: Format of the output picture (if 'html' is provided, GraphvizJS is used to render the visualization in an HTML page)
     :param bgcolor: Background color of the visualization (default: white)
-    :param decorations: Decorations (color, label) associated to the elements of the Petri net
-    :param debug: Boolean enabling/disabling the debug mode (show place and transition's names)
-    :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
+    :param decorations: Decorations (color, label) associated with the elements of the Petri net
+    :param debug: Boolean enabling/disabling debug mode (shows place and transition names)
+    :param rankdir: Sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
     :param graph_title: Sets the title of the visualization (if provided)
-    :param variant_str: the variant to be used (possible values:
-    'wo_decoration', 'token_decoration_frequency', 'token_decoration_performance', 'greedy_decoration_frequency',
-    'greedy_decoration_performance', 'alignments')
-    :param log: the event log or Pandas dataframe that should be used
+    :param variant_str: The variant to be used (possible values:
+        'wo_decoration', 'token_decoration_frequency', 'token_decoration_performance',
+        'greedy_decoration_frequency', 'greedy_decoration_performance', 'alignments')
+    :param log: The event log or Pandas dataframe that should be used, if decoration is required
 
     .. code-block:: python3
 
@@ -109,21 +121,21 @@ def save_vis_petri_net(petri_net: PetriNet, initial_marking: Marking, final_mark
                        decorations: Dict[Any, Any] = None, debug: bool = False, rankdir: str = constants.DEFAULT_RANKDIR_GVIZ,
                        graph_title: Optional[str] = None, variant_str: str = "wo_decoration", log: Optional[Union[EventLog, pd.DataFrame]] = None, **kwargs):
     """
-    Saves a Petri net visualization to a file
+    Saves a Petri net visualization to a file.
 
     :param petri_net: Petri net
     :param initial_marking: Initial marking
     :param final_marking: Final marking
     :param file_path: Destination path
     :param bgcolor: Background color of the visualization (default: white)
-    :param decorations: Decorations (color, label) associated to the elements of the Petri net
-    :param debug: Boolean enabling/disabling the debug mode (show place and transition's names)
-    :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
+    :param decorations: Decorations (color, label) associated with the elements of the Petri net
+    :param debug: Boolean enabling/disabling debug mode (shows place and transition names)
+    :param rankdir: Sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
     :param graph_title: Sets the title of the visualization (if provided)
-    :param variant_str: the variant to be used (possible values:
-    'wo_decoration', 'token_decoration_frequency', 'token_decoration_performance', 'greedy_decoration_frequency',
-    'greedy_decoration_performance', 'alignments')
-    :param log: the event log or Pandas dataframe that should be used
+    :param variant_str: The variant to be used (possible values:
+        'wo_decoration', 'token_decoration_frequency', 'token_decoration_performance',
+        'greedy_decoration_frequency', 'greedy_decoration_performance', 'alignments')
+    :param log: The event log or Pandas dataframe that should be used, if decoration is required
 
     .. code-block:: python3
 
@@ -147,16 +159,16 @@ def view_performance_dfg(dfg: dict, start_activities: dict, end_activities: dict
                          aggregation_measure="mean", bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, serv_time: Optional[Dict[str, float]] = None,
                          graph_title: Optional[str] = None):
     """
-    Views a performance DFG
+    Views a performance DFG.
 
     :param dfg: DFG object
     :param start_activities: Start activities
     :param end_activities: End activities
-    :param format: Format of the output picture (if html is provided, GraphvizJS is used to render the visualization in an HTML page)
-    :param aggregation_measure: Aggregation measure (default: mean): mean, median, min, max, sum, stdev
+    :param format: Format of the output picture (if 'html' is provided, GraphvizJS is used to render the visualization in an HTML page)
+    :param aggregation_measure: Aggregation measure (default: mean), possible values: mean, median, min, max, sum, stdev
     :param bgcolor: Background color of the visualization (default: white)
-    :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
-    :param serv_time: (optional) provides the activities' service times, used to decorate the graph
+    :param rankdir: Sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
+    :param serv_time: (optional) Provides the activities' service times, used to decorate the graph
     :param graph_title: Sets the title of the visualization (if provided)
 
     .. code-block:: python3
@@ -182,16 +194,16 @@ def save_vis_performance_dfg(dfg: dict, start_activities: dict, end_activities: 
                              aggregation_measure="mean", bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, serv_time: Optional[Dict[str, float]] = None,
                              graph_title: Optional[str] = None, **kwargs):
     """
-    Saves the visualization of a performance DFG
+    Saves the visualization of a performance DFG.
 
     :param dfg: DFG object
     :param start_activities: Start activities
     :param end_activities: End activities
     :param file_path: Destination path
-    :param aggregation_measure: Aggregation measure (default: mean): mean, median, min, max, sum, stdev
+    :param aggregation_measure: Aggregation measure (default: mean), possible values: mean, median, min, max, sum, stdev
     :param bgcolor: Background color of the visualization (default: white)
-    :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
-    :param serv_time: (optional) provides the activities' service times, used to decorate the graph
+    :param rankdir: Sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
+    :param serv_time: (optional) Provides the activities' service times, used to decorate the graph
     :param graph_title: Sets the title of the visualization (if provided)
 
     .. code-block:: python3
@@ -215,15 +227,15 @@ def save_vis_performance_dfg(dfg: dict, start_activities: dict, end_activities: 
 
 def view_dfg(dfg: dict, start_activities: dict, end_activities: dict, format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW, bgcolor: str = "white", max_num_edges: int = sys.maxsize, rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None):
     """
-    Views a (composite) DFG
+    Views a (composite) DFG.
 
     :param dfg: DFG object
     :param start_activities: Start activities
     :param end_activities: End activities
-    :param format: Format of the output picture (if html is provided, GraphvizJS is used to render the visualization in an HTML page)
+    :param format: Format of the output picture (if 'html' is provided, GraphvizJS is used to render the visualization in an HTML page)
     :param bgcolor: Background color of the visualization (default: white)
-    :param max_num_edges: maximum number of edges to represent in the graph
-    :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
+    :param max_num_edges: Maximum number of edges to represent in the graph
+    :param rankdir: Sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
     :param graph_title: Sets the title of the visualization (if provided)
 
     .. code-block:: python3
@@ -247,15 +259,15 @@ def view_dfg(dfg: dict, start_activities: dict, end_activities: dict, format: st
 
 def save_vis_dfg(dfg: dict, start_activities: dict, end_activities: dict, file_path: str, bgcolor: str = "white", max_num_edges: int = sys.maxsize, rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None, **kwargs):
     """
-    Saves a DFG visualization to a file
+    Saves a DFG visualization to a file.
 
     :param dfg: DFG object
     :param start_activities: Start activities
     :param end_activities: End activities
     :param file_path: Destination path
     :param bgcolor: Background color of the visualization (default: white)
-    :param max_num_edges: maximum number of edges to represent in the graph
-    :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
+    :param max_num_edges: Maximum number of edges to represent in the graph
+    :param rankdir: Sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
     :param graph_title: Sets the title of the visualization (if provided)
 
     .. code-block:: python3
@@ -279,12 +291,12 @@ def save_vis_dfg(dfg: dict, start_activities: dict, end_activities: dict, file_p
 
 def view_process_tree(tree: ProcessTree, format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW, bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None):
     """
-    Views a process tree
+    Views a process tree.
 
     :param tree: Process tree
-    :param format: Format of the visualization (if html is provided, GraphvizJS is used to render the visualization in an HTML page)
+    :param format: Format of the visualization (if 'html' is provided, GraphvizJS is used to render the visualization in an HTML page)
     :param bgcolor: Background color of the visualization (default: white)
-    :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
+    :param rankdir: Sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
     :param graph_title: Sets the title of the visualization (if provided)
 
     .. code-block:: python3
@@ -304,12 +316,12 @@ def view_process_tree(tree: ProcessTree, format: str = constants.DEFAULT_FORMAT_
 
 def save_vis_process_tree(tree: ProcessTree, file_path: str, bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None, **kwargs):
     """
-    Saves the visualization of a process tree
+    Saves the visualization of a process tree.
 
     :param tree: Process tree
     :param file_path: Destination path
     :param bgcolor: Background color of the visualization (default: white)
-    :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
+    :param rankdir: Sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
     :param graph_title: Sets the title of the visualization (if provided)
 
     .. code-block:: python3
@@ -329,13 +341,13 @@ def save_vis_process_tree(tree: ProcessTree, file_path: str, bgcolor: str = "whi
 
 def save_vis_bpmn(bpmn_graph: BPMN, file_path: str, bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, variant_str: str = "classic", graph_title: Optional[str] = None, **kwargs):
     """
-    Saves the visualization of a BPMN graph
+    Saves the visualization of a BPMN graph.
 
     :param bpmn_graph: BPMN graph
     :param file_path: Destination path
     :param bgcolor: Background color of the visualization (default: white)
-    :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
-    :param variant_str: variant of the visualization to be used ("classic" or "dagrejs")
+    :param rankdir: Sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
+    :param variant_str: Variant of the visualization to be used ("classic" or "dagrejs")
     :param graph_title: Sets the title of the visualization (if provided)
 
     .. code-block:: python3
@@ -359,13 +371,13 @@ def save_vis_bpmn(bpmn_graph: BPMN, file_path: str, bgcolor: str = "white", rank
 
 def view_bpmn(bpmn_graph: BPMN, format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW, bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, variant_str: str = "classic", graph_title: Optional[str] = None):
     """
-    Views a BPMN graph
+    Views a BPMN graph.
 
     :param bpmn_graph: BPMN graph
-    :param format: Format of the visualization (if html is provided, GraphvizJS is used to render the visualization in an HTML page)
+    :param format: Format of the visualization (if 'html' is provided, GraphvizJS is used to render the visualization in an HTML page)
     :param bgcolor: Background color of the visualization (default: white)
-    :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
-    :param variant_str: variant of the visualization to be used ("classic" or "dagrejs")
+    :param rankdir: Sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
+    :param variant_str: Variant of the visualization to be used ("classic" or "dagrejs")
     :param graph_title: Sets the title of the visualization (if provided)
 
     .. code-block:: python3
@@ -389,7 +401,7 @@ def view_bpmn(bpmn_graph: BPMN, format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW
 
 def view_heuristics_net(heu_net: HeuristicsNet, format: str = "png", bgcolor: str = "white", graph_title: Optional[str] = None):
     """
-    Views an heuristics net
+    Views a heuristics net.
 
     :param heu_net: Heuristics net
     :param format: Format of the visualization
@@ -413,7 +425,7 @@ def view_heuristics_net(heu_net: HeuristicsNet, format: str = "png", bgcolor: st
 
 def save_vis_heuristics_net(heu_net: HeuristicsNet, file_path: str, bgcolor: str = "white", graph_title: Optional[str] = None, **kwargs):
     """
-    Saves the visualization of an heuristics net
+    Saves the visualization of a heuristics net.
 
     :param heu_net: Heuristics net
     :param file_path: Destination path
@@ -453,29 +465,23 @@ def __dotted_attribute_selection(log: Union[EventLog, pd.DataFrame], attributes)
 
 def view_dotted_chart(log: Union[EventLog, pd.DataFrame], format: str = "png", attributes=None, bgcolor: str = "white", show_legend: bool = True, graph_title: Optional[str] = None):
     """
-    Displays the dotted chart
+    Displays the dotted chart.
 
-    The dotted chart is a classic visualization of the events inside an event log across different dimensions. Each event of the event log is corresponding to a point. The dimensions are projected on a graph having:
-    - X axis: the values of the first dimension are represented there.
-    - Y-axis: the values of the second dimension are represented there.
-    - Color: the values of the third dimension are represented as different colors for the points of the dotted chart.
+    Each event in the log is represented as a point. Dimensions are:
+    - X-axis: The value of the first selected attribute.
+    - Y-axis: The value of the second selected attribute.
+    - Color: The value of the third selected attribute.
 
-    The values can be either string, numeric or date values, and are managed accordingly by the dotted chart.
-    The dotted chart can be built on different attributes. A convenient choice for the dotted chart is to visualize the distribution of cases and events over the time, with the following choices:
-    - X-axis: the timestamp of the event.
-    - Y-axis: the index of the case inside the event log.
-    - Color: the activity of the event.
-
-    The aforementioned choice permits to identify visually patterns such as:
-    - Batches.
-    - Variations in the case arrival rate.
-    - Variations in the case finishing rate.
+    If attributes are not provided, a default dotted chart is shown:
+    X-axis: time
+    Y-axis: case index (in order of occurrence)
+    Color: activity
 
     :param log: Event log
     :param format: Image format
-    :param attributes: Attributes that should be used to construct the dotted chart. If None, the default dotted chart will be shown: x-axis: time y-axis: cases (in order of occurrence in the event log) color: activity. For custom attributes, use a list of attributes of the form [x-axis attribute, y-axis attribute, color attribute], e.g., ["concept:name", "org:resource", "concept:name"])
-    :param bgcolor: background color to be used in the dotted chart
-    :param show_legend: boolean (enables/disables showing the legend)
+    :param attributes: Attributes used to construct the dotted chart. If None, the default dotted chart is used. For custom attributes, use a list of the form [x-axis attribute, y-axis attribute, color attribute].
+    :param bgcolor: Background color of the chart (default: white)
+    :param show_legend: Boolean (enables/disables the legend)
     :param graph_title: Sets the title of the visualization (if provided)
 
     .. code-block:: python3
@@ -496,29 +502,23 @@ def view_dotted_chart(log: Union[EventLog, pd.DataFrame], format: str = "png", a
 
 def save_vis_dotted_chart(log: Union[EventLog, pd.DataFrame], file_path: str, attributes=None, bgcolor: str = "white", show_legend: bool = True, graph_title: Optional[str] = None, **kwargs):
     """
-    Saves the visualization of the dotted chart
+    Saves the visualization of the dotted chart.
 
-    The dotted chart is a classic visualization of the events inside an event log across different dimensions. Each event of the event log is corresponding to a point. The dimensions are projected on a graph having:
-    - X axis: the values of the first dimension are represented there.
-    - Y-axis: the values of the second dimension are represented there.
-    - Color: the values of the third dimension are represented as different colors for the points of the dotted chart.
+    Each event in the log is represented as a point. Dimensions are:
+    - X-axis: The value of the first selected attribute.
+    - Y-axis: The value of the second selected attribute.
+    - Color: The value of the third selected attribute.
 
-    The values can be either string, numeric or date values, and are managed accordingly by the dotted chart.
-    The dotted chart can be built on different attributes. A convenient choice for the dotted chart is to visualize the distribution of cases and events over the time, with the following choices:
-    - X-axis: the timestamp of the event.
-    - Y-axis: the index of the case inside the event log.
-    - Color: the activity of the event.
-
-    The aforementioned choice permits to identify visually patterns such as:
-    - Batches.
-    - Variations in the case arrival rate.
-    - Variations in the case finishing rate.
+    If attributes are not provided, a default dotted chart is used:
+    X-axis: time
+    Y-axis: case index (in order of occurrence)
+    Color: activity
 
     :param log: Event log
     :param file_path: Destination path
-    :param attributes: Attributes that should be used to construct the dotted chart (for example, ["concept:name", "org:resource"])
-    :param bgcolor: background color to be used in the dotted chart
-    :param show_legend: boolean (enables/disables showing the legend)
+    :param attributes: Attributes for the dotted chart. For example, ["time:timestamp", "concept:name", "org:resource"].
+    :param bgcolor: Background color of the chart (default: white)
+    :param show_legend: Boolean (enables/disables the legend)
     :param graph_title: Sets the title of the visualization (if provided)
 
     .. code-block:: python3
@@ -538,10 +538,10 @@ def save_vis_dotted_chart(log: Union[EventLog, pd.DataFrame], file_path: str, at
 
 def view_sna(sna_metric: SNA, variant_str: Optional[str] = None):
     """
-    Represents a SNA metric (.html)
+    Represents a SNA metric (.html).
 
     :param sna_metric: Values of the metric
-    :param variant_str: variant to be used (default: pyvis)
+    :param variant_str: Variant to be used (default: pyvis)
 
     .. code-block:: python3
 
@@ -566,11 +566,11 @@ def view_sna(sna_metric: SNA, variant_str: Optional[str] = None):
 
 def save_vis_sna(sna_metric: SNA, file_path: str, variant_str: Optional[str] = None, **kwargs):
     """
-    Saves the visualization of a SNA metric in a .html file
+    Saves the visualization of a SNA metric in a .html file.
 
     :param sna_metric: Values of the metric
     :param file_path: Destination path
-    :param variant_str: variant to be used (default: pyvis)
+    :param variant_str: Variant to be used (default: pyvis)
 
     .. code-block:: python3
 
@@ -596,13 +596,13 @@ def save_vis_sna(sna_metric: SNA, file_path: str, variant_str: Optional[str] = N
 
 def view_case_duration_graph(log: Union[EventLog, pd.DataFrame], format: str = "png", activity_key="concept:name", timestamp_key="time:timestamp", case_id_key="case:concept:name", graph_title: Optional[str] = None):
     """
-    Visualizes the case duration graph
+    Visualizes the case duration graph.
 
     :param log: Log object
     :param format: Format of the visualization (png, svg, ...)
-    :param activity_key: attribute to be used as activity
-    :param case_id_key: attribute to be used as case identifier
-    :param timestamp_key: attribute to be used as timestamp
+    :param activity_key: Attribute to be used as activity
+    :param case_id_key: Attribute to be used as case identifier
+    :param timestamp_key: Attribute to be used as timestamp
     :param graph_title: Sets the title of the visualization (if provided)
 
     .. code-block:: python3
@@ -631,13 +631,13 @@ def view_case_duration_graph(log: Union[EventLog, pd.DataFrame], format: str = "
 
 def save_vis_case_duration_graph(log: Union[EventLog, pd.DataFrame], file_path: str, activity_key="concept:name", timestamp_key="time:timestamp", case_id_key="case:concept:name", graph_title: Optional[str] = None, **kwargs):
     """
-    Saves the case duration graph in the specified path
+    Saves the case duration graph to the specified path.
 
     :param log: Log object
     :param file_path: Destination path
-    :param activity_key: attribute to be used as activity
-    :param case_id_key: attribute to be used as case identifier
-    :param timestamp_key: attribute to be used as timestamp
+    :param activity_key: Attribute to be used as activity
+    :param case_id_key: Attribute to be used as case identifier
+    :param timestamp_key: Attribute to be used as timestamp
     :param graph_title: Sets the title of the visualization (if provided)
 
     .. code-block:: python3
@@ -666,13 +666,13 @@ def save_vis_case_duration_graph(log: Union[EventLog, pd.DataFrame], file_path: 
 
 def view_events_per_time_graph(log: Union[EventLog, pd.DataFrame], format: str = "png", activity_key="concept:name", timestamp_key="time:timestamp", case_id_key="case:concept:name", graph_title: Optional[str] = None):
     """
-    Visualizes the events per time graph
+    Visualizes the events per time graph.
 
     :param log: Log object
     :param format: Format of the visualization (png, svg, ...)
-    :param activity_key: attribute to be used as activity
-    :param case_id_key: attribute to be used as case identifier
-    :param timestamp_key: attribute to be used as timestamp
+    :param activity_key: Attribute to be used as activity
+    :param case_id_key: Attribute to be used as case identifier
+    :param timestamp_key: Attribute to be used as timestamp
     :param graph_title: Sets the title of the visualization (if provided)
 
     .. code-block:: python3
@@ -701,13 +701,13 @@ def view_events_per_time_graph(log: Union[EventLog, pd.DataFrame], format: str =
 
 def save_vis_events_per_time_graph(log: Union[EventLog, pd.DataFrame], file_path: str, activity_key="concept:name", timestamp_key="time:timestamp", case_id_key="case:concept:name", graph_title: Optional[str] = None, **kwargs):
     """
-    Saves the events per time graph in the specified path
+    Saves the events per time graph to the specified path.
 
     :param log: Log object
     :param file_path: Destination path
-    :param activity_key: attribute to be used as activity
-    :param case_id_key: attribute to be used as case identifier
-    :param timestamp_key: attribute to be used as timestamp
+    :param activity_key: Attribute to be used as activity
+    :param case_id_key: Attribute to be used as case identifier
+    :param timestamp_key: Attribute to be used as timestamp
     :param graph_title: Sets the title of the visualization (if provided)
 
     .. code-block:: python3
@@ -738,20 +738,19 @@ def save_vis_events_per_time_graph(log: Union[EventLog, pd.DataFrame], file_path
 
 def view_performance_spectrum(log: Union[EventLog, pd.DataFrame], activities: List[str], format: str = "png", activity_key: str = "concept:name", timestamp_key: str = "time:timestamp", case_id_key: str = "case:concept:name", bgcolor: str = "white", graph_title: Optional[str] = None):
     """
-    Displays the performance spectrum
+    Displays the performance spectrum.
 
-    The performance spectrum is a novel visualization of the performance of the process of the time elapsed between different activities in the process executions. The performance spectrum has initially been described in:
+    The performance spectrum is a novel visualization of the performance of the process, showing time elapsed between different activities.
+    Refer to:
+    Denisov, Vadim, et al. "The Performance Spectrum Miner: Visual Analytics for Fine-Grained Performance Analysis of Processes."
+    BPM (Dissertation/Demos/Industry). 2018.
 
-    Denisov, Vadim, et al. "The Performance Spectrum Miner: Visual Analytics for Fine-Grained Performance Analysis of Processes." BPM (Dissertation/Demos/Industry). 2018.
-
-    :param perf_spectrum: Performance spectrum
+    :param log: Event log
+    :param activities: List of activities (in order) used to build the performance spectrum
     :param format: Format of the visualization (png, svg ...)
-    :param activity_key: attribute to be used for the activity
-    :param timestamp_key: attribute to be used for the timestamp
-    :param case_id_key: attribute to be used as case identifier
-    :param activity_key: attribute to be used as activity
-    :param case_id_key: attribute to be used as case identifier
-    :param timestamp_key: attribute to be used as timestamp
+    :param activity_key: Attribute to be used for the activity
+    :param timestamp_key: Attribute to be used for the timestamp
+    :param case_id_key: Attribute to be used as case identifier
     :param bgcolor: Background color of the visualization (default: white)
     :param graph_title: Sets the title of the visualization (if provided)
 
@@ -778,18 +777,18 @@ def view_performance_spectrum(log: Union[EventLog, pd.DataFrame], activities: Li
 
 def save_vis_performance_spectrum(log: Union[EventLog, pd.DataFrame], activities: List[str], file_path: str, activity_key: str = "concept:name", timestamp_key: str = "time:timestamp", case_id_key: str = "case:concept:name", bgcolor: str = "white", graph_title: Optional[str] = None, **kwargs):
     """
-    Saves the visualization of the performance spectrum to a file
+    Saves the visualization of the performance spectrum to a file.
 
-    The performance spectrum is a novel visualization of the performance of the process of the time elapsed between different activities in the process executions. The performance spectrum has initially been described in:
-
-    Denisov, Vadim, et al. "The Performance Spectrum Miner: Visual Analytics for Fine-Grained Performance Analysis of Processes." BPM (Dissertation/Demos/Industry). 2018.
+    Refer to:
+    Denisov, Vadim, et al. "The Performance Spectrum Miner: Visual Analytics for Fine-Grained Performance Analysis of Processes."
+    BPM (Dissertation/Demos/Industry). 2018.
 
     :param log: Event log
-    :param activities: List of activities (in order) that is used to build the performance spectrum
+    :param activities: List of activities used to build the performance spectrum
     :param file_path: Destination path (including the extension)
-    :param activity_key: attribute to be used for the activity
-    :param timestamp_key: attribute to be used for the timestamp
-    :param case_id_key: attribute to be used as case identifier
+    :param activity_key: Attribute to be used for the activity
+    :param timestamp_key: Attribute to be used for the timestamp
+    :param case_id_key: Attribute to be used as case identifier
     :param bgcolor: Background color of the visualization (default: white)
     :param graph_title: Sets the title of the visualization (if provided)
 
@@ -828,7 +827,7 @@ def __builds_events_distribution_graph(log: Union[EventLog, pd.DataFrame], param
     elif distr_type == "weeks":
         title = "Distribution of the Events over the Weeks of a Year"; x_axis = "Week of the Year"; y_axis = "Number of Events"
     else:
-        raise Exception("unsupported distribution specified.")
+        raise Exception("Unsupported distribution specified.")
 
     if check_is_pandas_dataframe(log):
         check_pandas_dataframe_columns(log)
@@ -843,16 +842,22 @@ def __builds_events_distribution_graph(log: Union[EventLog, pd.DataFrame], param
 
 def view_events_distribution_graph(log: Union[EventLog, pd.DataFrame], distr_type: str = "days_week", format="png", activity_key="concept:name", timestamp_key="time:timestamp", case_id_key="case:concept:name", graph_title: Optional[str] = None):
     """
-    Shows the distribution of the events in the specified dimension
+    Shows the distribution of the events in the specified dimension.
 
-    Observing the distribution of events over time permits to infer useful information about the work shifts, the working days, and the period of the year that are more or less busy.
+    This allows identifying work shifts, busy days, and busy periods of the year.
 
     :param log: Event log
-    :param distr_type: Type of distribution (default: days_week): - days_month => Gets the distribution of the events among the days of a month (from 1 to 31) - months => Gets the distribution of the events among the months (from 1 to 12) - years => Gets the distribution of the events among the years of the event log - hours => Gets the distribution of the events among the hours of a day (from 0 to 23) - days_week => Gets the distribution of the events among the days of a week (from Monday to Sunday) - weeks => Gets the distribution of the events among the weeks of a year (from 0 to 52)
+    :param distr_type: Type of distribution (default: days_week):
+        - days_month: Distribution of events among days of a month (1-31)
+        - months: Distribution of events among months (1-12)
+        - years: Distribution of events among years
+        - hours: Distribution of events among hours of a day (0-23)
+        - days_week: Distribution of events among days of the week (Mon-Sun)
+        - weeks: Distribution of events among weeks of a year (0-52)
     :param format: Format of the visualization (default: png)
-    :param activity_key: attribute to be used as activity
-    :param case_id_key: attribute to be used as case identifier
-    :param timestamp_key: attribute to be used as timestamp
+    :param activity_key: Attribute to be used as activity
+    :param case_id_key: Attribute to be used as case identifier
+    :param timestamp_key: Attribute to be used as timestamp
     :param graph_title: Sets the title of the visualization (if provided)
 
     .. code-block:: python3
@@ -880,16 +885,22 @@ def view_events_distribution_graph(log: Union[EventLog, pd.DataFrame], distr_typ
 def save_vis_events_distribution_graph(log: Union[EventLog, pd.DataFrame], file_path: str,
                                        distr_type: str = "days_week", activity_key="concept:name", timestamp_key="time:timestamp", case_id_key="case:concept:name", graph_title: Optional[str] = None, **kwargs):
     """
-    Saves the distribution of the events in a picture file
+    Saves the distribution of the events in a picture file.
 
-    Observing the distribution of events over time permits to infer useful information about the work shifts, the working days, and the period of the year that are more or less busy.
+    Observing the distribution of events over time helps infer work shifts, working days, and busy periods of the year.
 
     :param log: Event log
     :param file_path: Destination path (including the extension)
-    :param distr_type: Type of distribution (default: days_week): - days_month => Gets the distribution of the events among the days of a month (from 1 to 31) - months => Gets the distribution of the events among the months (from 1 to 12) - years => Gets the distribution of the events among the years of the event log - hours => Gets the distribution of the events among the hours of a day (from 0 to 23) - days_week => Gets the distribution of the events among the days of a week (from Monday to Sunday)
-    :param activity_key: attribute to be used as activity
-    :param case_id_key: attribute to be used as case identifier
-    :param timestamp_key: attribute to be used as timestamp
+    :param distr_type: Type of distribution (default: days_week):
+        - days_month: Events distribution among days of a month (1-31)
+        - months: Events distribution among months (1-12)
+        - years: Events distribution among years
+        - hours: Events distribution among hours of a day (0-23)
+        - days_week: Events distribution among days of a week (Mon-Sun)
+        - weeks: Events distribution among weeks of a year (0-52)
+    :param activity_key: Attribute to be used as activity
+    :param case_id_key: Attribute to be used as case identifier
+    :param timestamp_key: Attribute to be used as timestamp
     :param graph_title: Sets the title of the visualization (if provided)
 
     .. code-block:: python3
@@ -916,22 +927,20 @@ def save_vis_events_distribution_graph(log: Union[EventLog, pd.DataFrame], file_
 
 def view_ocdfg(ocdfg: Dict[str, Any], annotation: str = "frequency", act_metric: str = "events", edge_metric="event_couples", act_threshold: int = 0, edge_threshold: int = 0, performance_aggregation: str = "mean", format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW, bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None, variant_str: str = "classic"):
     """
-    Views an OC-DFG (object-centric directly-follows graph) with the provided configuration.
-
-    Object-centric directly-follows multigraphs are a composition of directly-follows graphs for the single object type, which can be annotated with different metrics considering the entities of an object-centric event log (i.e., events, unique objects, total objects).
+    Views an OC-DFG (object-centric directly-follows graph).
 
     :param ocdfg: Object-centric directly-follows graph
-    :param annotation: The annotation to use for the visualization. Values: - "frequency": frequency annotation - "performance": performance annotation
-    :param act_metric: The metric to use for the activities. Available values: - "events" => number of events (default) - "unique_objects" => number of unique objects - "total_objects" => number of total objects
-    :param edge_metric: The metric to use for the edges. Available values: - "event_couples" => number of event couples (default) - "unique_objects" => number of unique objects - "total_objects" => number of total objects
-    :param act_threshold: The threshold to apply on the activities frequency (default: 0). Only activities having a frequency >= than this are kept in the graph.
-    :param edge_threshold: The threshold to apply on the edges frequency (default 0). Only edges having a frequency >= than this are kept in the graph.
-    :param performance_aggregation: The aggregation measure to use for the performance: mean, median, min, max, sum
-    :param format: The format of the output visualization (if html is provided, GraphvizJS is used to render the visualization in an HTML page)
-    :param bgcolor: Background color of the visualization (default: white)
-    :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
-    :param graph_title: Sets the title of the visualization (if provided)
-    :param variant_str: variant of the visualization to be used ("classic" or "elkjs")
+    :param annotation: The annotation to use ("frequency" or "performance")
+    :param act_metric: The metric for activities ("events", "unique_objects", "total_objects")
+    :param edge_metric: The metric for edges ("event_couples", "unique_objects", "total_objects")
+    :param act_threshold: Threshold on activities frequency (default: 0)
+    :param edge_threshold: Threshold on edges frequency (default: 0)
+    :param performance_aggregation: Aggregation measure for performance: mean, median, min, max, sum
+    :param format: Format of the output (if 'html' is provided, GraphvizJS is used)
+    :param bgcolor: Background color (default: white)
+    :param rankdir: Graph direction ("LR" or "TB")
+    :param graph_title: Title of the visualization (if provided)
+    :param variant_str: Variant of the visualization ("classic" or "elkjs")
 
     .. code-block:: python3
 
@@ -958,22 +967,20 @@ def view_ocdfg(ocdfg: Dict[str, Any], annotation: str = "frequency", act_metric:
 
 def save_vis_ocdfg(ocdfg: Dict[str, Any], file_path: str, annotation: str = "frequency", act_metric: str = "events", edge_metric="event_couples", act_threshold: int = 0, edge_threshold: int = 0, performance_aggregation: str = "mean", bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None, variant_str: str = "classic", **kwargs):
     """
-    Saves the visualization of an OC-DFG (object-centric directly-follows graph) with the provided configuration.
-
-    Object-centric directly-follows multigraphs are a composition of directly-follows graphs for the single object type, which can be annotated with different metrics considering the entities of an object-centric event log (i.e., events, unique objects, total objects).
+    Saves the visualization of an OC-DFG.
 
     :param ocdfg: Object-centric directly-follows graph
-    :param file_path: Destination path (including the extension)
-    :param annotation: The annotation to use for the visualization. Values: - "frequency": frequency annotation - "performance": performance annotation
-    :param act_metric: The metric to use for the activities. Available values: - "events" => number of events (default) - "unique_objects" => number of unique objects - "total_objects" => number of total objects
-    :param edge_metric: The metric to use for the edges. Available values: - "event_couples" => number of event couples (default) - "unique_objects" => number of unique objects - "total_objects" => number of total objects
-    :param act_threshold: The threshold to apply on the activities frequency (default: 0). Only activities having a frequency >= than this are kept in the graph.
-    :param edge_threshold: The threshold to apply on the edges frequency (default 0). Only edges having a frequency >= than this are kept in the graph.
-    :param performance_aggregation: The aggregation measure to use for the performance: mean, median, min, max, sum
-    :param bgcolor: Background color of the visualization (default: white)
-    :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
-    :param graph_title: Sets the title of the visualization (if provided)
-    :param variant_str: variant of the visualization to be used ("classic" or "elkjs")
+    :param file_path: Destination path
+    :param annotation: "frequency" or "performance"
+    :param act_metric: Metric for activities ("events", "unique_objects", "total_objects")
+    :param edge_metric: Metric for edges ("event_couples", "unique_objects", "total_objects")
+    :param act_threshold: Threshold on activities frequency
+    :param edge_threshold: Threshold on edges frequency
+    :param performance_aggregation: Aggregation measure for performance: mean, median, min, max, sum
+    :param bgcolor: Background color (default: white)
+    :param rankdir: Graph direction ("LR" or "TB")
+    :param graph_title: Title of the visualization (if provided)
+    :param variant_str: Variant ("classic" or "elkjs")
 
     .. code-block:: python3
 
@@ -999,13 +1006,13 @@ def save_vis_ocdfg(ocdfg: Dict[str, Any], file_path: str, annotation: str = "fre
 
 def view_ocpn(ocpn: Dict[str, Any], format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW, bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None):
     """
-    Visualizes on the screen the object-centric Petri net
+    Visualizes the object-centric Petri net.
 
     :param ocpn: Object-centric Petri net
-    :param format: Format of the visualization (if html is provided, GraphvizJS is used to render the visualization in an HTML page)
-    :param bgcolor: Background color of the visualization (default: white)
-    :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
-    :param graph_title: Sets the title of the visualization (if provided)
+    :param format: Format of the visualization (if 'html' is provided, GraphvizJS is used)
+    :param bgcolor: Background color (default: white)
+    :param rankdir: Graph direction ("LR" or "TB")
+    :param graph_title: Title of the visualization (if provided)
 
     .. code-block:: python3
 
@@ -1023,13 +1030,13 @@ def view_ocpn(ocpn: Dict[str, Any], format: str = constants.DEFAULT_FORMAT_GVIZ_
 
 def save_vis_ocpn(ocpn: Dict[str, Any], file_path: str, bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None, **kwargs):
     """
-    Saves the visualization of the object-centric Petri net into a file
+    Saves the visualization of the object-centric Petri net into a file.
 
     :param ocpn: Object-centric Petri net
-    :param file_path: Target path of the visualization
-    :param bgcolor: Background color of the visualization (default: white)
-    :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
-    :param graph_title: Sets the title of the visualization (if provided)
+    :param file_path: Target path
+    :param bgcolor: Background color (default: white)
+    :param rankdir: Graph direction ("LR" or "TB")
+    :param graph_title: Title of the visualization (if provided)
 
     .. code-block:: python3
 
@@ -1047,15 +1054,15 @@ def save_vis_ocpn(ocpn: Dict[str, Any], file_path: str, bgcolor: str = "white", 
 
 def view_network_analysis(network_analysis: Dict[Tuple[str, str], Dict[str, Any]], variant: str = "frequency", format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW, activity_threshold: int = 1, edge_threshold: int = 1, bgcolor: str = "white", graph_title: Optional[str] = None):
     """
-    Visualizes the network analysis
+    Visualizes the network analysis.
 
     :param network_analysis: Network analysis
-    :param variant: Variant of the visualization: - frequency (if the discovered network analysis contains the frequency of the interactions) - performance (if the discovered network analysis contains the performance of the interactions)
-    :param format: Format of the visualization (if html is provided, GraphvizJS is used to render the visualization in an HTML page)
-    :param activity_threshold: The minimum number of occurrences for an activity to be included (default: 1)
-    :param edge_threshold: The minimum number of occurrences for an edge to be included (default: 1)
-    :param bgcolor: Background color of the visualization (default: white)
-    :param graph_title: Sets the title of the visualization (if provided)
+    :param variant: "frequency" or "performance"
+    :param format: Format of the visualization (if 'html' is provided, GraphvizJS is used)
+    :param activity_threshold: Minimum occurrences of an activity to be included
+    :param edge_threshold: Minimum occurrences of an edge to be included
+    :param bgcolor: Background color (default: white)
+    :param graph_title: Title of the visualization (if provided)
 
     .. code-block:: python3
 
@@ -1077,15 +1084,15 @@ def view_network_analysis(network_analysis: Dict[Tuple[str, str], Dict[str, Any]
 
 def save_vis_network_analysis(network_analysis: Dict[Tuple[str, str], Dict[str, Any]], file_path: str, variant: str = "frequency", activity_threshold: int = 1, edge_threshold: int = 1, bgcolor: str = "white", graph_title: Optional[str] = None, **kwargs):
     """
-    Saves the visualization of the network analysis
+    Saves the visualization of the network analysis.
 
     :param network_analysis: Network analysis
-    :param file_path: Target path of the visualization
-    :param variant: Variant of the visualization: - frequency (if the discovered network analysis contains the frequency of the interactions) - performance (if the discovered network analysis contains the performance of the interactions)
-    :param activity_threshold: The minimum number of occurrences for an activity to be included (default: 1)
-    :param edge_threshold: The minimum number of occurrences for an edge to be included (default: 1)
-    :param bgcolor: Background color of the visualization (default: white)
-    :param graph_title: Sets the title of the visualization (if provided)
+    :param file_path: Target path
+    :param variant: "frequency" or "performance"
+    :param activity_threshold: Minimum occurrences of an activity
+    :param edge_threshold: Minimum occurrences of an edge
+    :param bgcolor: Background color (default: white)
+    :param graph_title: Title of the visualization (if provided)
 
     .. code-block:: python3
 
@@ -1107,12 +1114,12 @@ def save_vis_network_analysis(network_analysis: Dict[Tuple[str, str], Dict[str, 
 
 def view_transition_system(transition_system: TransitionSystem, format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW, bgcolor: str = "white", graph_title: Optional[str] = None):
     """
-    Views a transition system
+    Views a transition system.
 
     :param transition_system: Transition system
-    :param format: Format of the visualization (if html is provided, GraphvizJS is used to render the visualization in an HTML page)
-    :param bgcolor: Background color of the visualization (default: white)
-    :param graph_title: Sets the title of the visualization (if provided)
+    :param format: Format of the visualization (if 'html' is provided, GraphvizJS is used)
+    :param bgcolor: Background color (default: white)
+    :param graph_title: Title of the visualization (if provided)
 
     .. code-block:: python3
 
@@ -1130,12 +1137,12 @@ def view_transition_system(transition_system: TransitionSystem, format: str = co
 
 def save_vis_transition_system(transition_system: TransitionSystem, file_path: str, bgcolor: str = "white", graph_title: Optional[str] = None, **kwargs):
     """
-    Persists the visualization of a transition system
+    Persists the visualization of a transition system.
 
     :param transition_system: Transition system
     :param file_path: Destination path
-    :param bgcolor: Background color of the visualization (default: white)
-    :param graph_title: Sets the title of the visualization (if provided)
+    :param bgcolor: Background color (default: white)
+    :param graph_title: Title of the visualization (if provided)
 
     .. code-block:: python3
 
@@ -1153,12 +1160,12 @@ def save_vis_transition_system(transition_system: TransitionSystem, file_path: s
 
 def view_prefix_tree(trie: Trie, format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW, bgcolor: str = "white", graph_title: Optional[str] = None):
     """
-    Views a prefix tree
+    Views a prefix tree.
 
-    :param prefix_tree: Prefix tree
-    :param format: Format of the visualization (if html is provided, GraphvizJS is used to render the visualization in an HTML page)
-    :param bgcolor: Background color of the visualization (default: white)
-    :param graph_title: Sets the title of the visualization (if provided)
+    :param trie: Prefix tree
+    :param format: Format of the visualization (if 'html' is provided, GraphvizJS is used)
+    :param bgcolor: Background color (default: white)
+    :param graph_title: Title of the visualization (if provided)
 
     .. code-block:: python3
 
@@ -1176,12 +1183,12 @@ def view_prefix_tree(trie: Trie, format: str = constants.DEFAULT_FORMAT_GVIZ_VIE
 
 def save_vis_prefix_tree(trie: Trie, file_path: str, bgcolor: str = "white", graph_title: Optional[str] = None, **kwargs):
     """
-    Persists the visualization of a prefix tree
+    Persists the visualization of a prefix tree.
 
-    :param prefix_tree: Prefix tree
+    :param trie: Prefix tree
     :param file_path: Destination path
-    :param bgcolor: Background color of the visualization (default: white)
-    :param graph_title: Sets the title of the visualization (if provided)
+    :param bgcolor: Background color (default: white)
+    :param graph_title: Title of the visualization (if provided)
 
     .. code-block:: python3
 
@@ -1199,12 +1206,12 @@ def save_vis_prefix_tree(trie: Trie, file_path: str, bgcolor: str = "white", gra
 
 def view_alignments(log: Union[EventLog, pd.DataFrame], aligned_traces: List[Dict[str, Any]], format: str = "png", graph_title: Optional[str] = None):
     """
-    Views the alignment table as a figure
+    Views the alignment table as a figure.
 
-    :param log: event log
-    :param aligned_traces: results of an alignment
-    :param format: format of the visualization (default: png)
-    :param graph_title: Sets the title of the visualization (if provided)
+    :param log: Event log
+    :param aligned_traces: Results of an alignment
+    :param format: Format of the visualization (default: png)
+    :param graph_title: Title of the visualization (if provided)
 
     .. code-block:: python3
 
@@ -1227,12 +1234,12 @@ def view_alignments(log: Union[EventLog, pd.DataFrame], aligned_traces: List[Dic
 
 def save_vis_alignments(log: Union[EventLog, pd.DataFrame], aligned_traces: List[Dict[str, Any]], file_path: str, graph_title: Optional[str] = None, **kwargs):
     """
-    Saves an alignment table's figure in the disk
+    Saves an alignment table's figure on disk.
 
-    :param log: event log
-    :param aligned_traces: results of an alignment
-    :param file_path: target path in the disk
-    :param graph_title: Sets the title of the visualization (if provided)
+    :param log: Event log
+    :param aligned_traces: Results of an alignment
+    :param file_path: Target path
+    :param graph_title: Title of the visualization (if provided)
 
     .. code-block:: python3
 
@@ -1256,13 +1263,13 @@ def save_vis_alignments(log: Union[EventLog, pd.DataFrame], aligned_traces: List
 
 def view_footprints(footprints: Union[Tuple[Dict[str, Any], Dict[str, Any]], Dict[str, Any]], format: str = "png", graph_title: Optional[str] = None):
     """
-    Views the footprints as a figure
+    Views the footprints as a figure.
 
-    :param footprints: footprints
-    :param format: format of the visualization (default: png)
-    :param graph_title: Sets the title of the visualization (if provided)
+    :param footprints: Footprints
+    :param format: Format of the visualization (default: png)
+    :param graph_title: Title of the visualization (if provided)
 
-     .. code-block:: python3
+    .. code-block:: python3
 
         import pm4py
 
@@ -1287,11 +1294,11 @@ def view_footprints(footprints: Union[Tuple[Dict[str, Any], Dict[str, Any]], Dic
 
 def save_vis_footprints(footprints: Union[Tuple[Dict[str, Any], Dict[str, Any]], Dict[str, Any]], file_path: str, graph_title: Optional[str] = None, **kwargs):
     """
-    Saves the footprints' visualization on disk
+    Saves the footprints' visualization on disk.
 
-    :param footprints: footprints
-    :param file_path: target path of the visualization
-    :param graph_title: Sets the title of the visualization (if provided)
+    :param footprints: Footprints
+    :param file_path: Target path
+    :param graph_title: Title of the visualization (if provided)
 
      .. code-block:: python3
 
@@ -1318,17 +1325,18 @@ def save_vis_footprints(footprints: Union[Tuple[Dict[str, Any], Dict[str, Any]],
 
 def view_powl(powl: POWL, format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW, bgcolor: str = "white", variant_str: str = "basic", graph_title: Optional[str] = None):
     """
-    Perform a visualization of a POWL model.
+    Performs a visualization of a POWL model.
 
-    Reference paper:
-    Kourani, Humam, and Sebastiaan J. van Zelst. "POWL: partially ordered workflow language." International Conference on Business Process Management. Cham: Springer Nature Switzerland, 2023.
+    Reference:
+    Kourani, Humam, and Sebastiaan J. van Zelst.
+    "POWL: partially ordered workflow language."
+    International Conference on Business Process Management. Cham: Springer Nature Switzerland, 2023.
 
     :param powl: POWL model
-    :param format: format of the visualization (default: png)
-    :param bgcolor: background color of the visualization (default: white)
-    :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
-    :param variant_str: variant of the visualization to be used (values: "basic", "net")
-    :param graph_title: Sets the title of the visualization (if provided)
+    :param format: Format of the visualization (default: png)
+    :param bgcolor: Background color (default: white)
+    :param variant_str: Variant of the visualization to be used ("basic" or "net")
+    :param graph_title: Title of the visualization (if provided)
 
      .. code-block:: python3
 
@@ -1359,14 +1367,16 @@ def save_vis_powl(powl: POWL, file_path: str, bgcolor: str = "white", rankdir: s
     """
     Saves the visualization of a POWL model.
 
-    Reference paper:
-    Kourani, Humam, and Sebastiaan J. van Zelst. "POWL: partially ordered workflow language." International Conference on Business Process Management. Cham: Springer Nature Switzerland, 2023.
+    Reference:
+    Kourani, Humam, and Sebastiaan J. van Zelst.
+    "POWL: partially ordered workflow language."
+    International Conference on Business Process Management. Cham: Springer Nature Switzerland, 2023.
 
     :param powl: POWL model
-    :param file_path: target path of the visualization
-    :param bgcolor: background color of the visualization (default: white)
-    :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
-    :param graph_title: Sets the title of the visualization (if provided)
+    :param file_path: Target path
+    :param bgcolor: Background color (default: white)
+    :param rankdir: Graph direction ("LR" or "TB")
+    :param graph_title: Title of the visualization (if provided)
 
      .. code-block:: python3
 
@@ -1386,14 +1396,14 @@ def save_vis_powl(powl: POWL, file_path: str, bgcolor: str = "white", rankdir: s
 
 def view_object_graph(ocel: OCEL, graph: Set[Tuple[str, str]], format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW, bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None):
     """
-    Visualizes an object graph on the screen
+    Visualizes an object graph on the screen.
 
-    :param ocel: object-centric event log
-    :param graph: object graph
-    :param format: format of the visualization (if html is provided, GraphvizJS is used to render the visualization in an HTML page)
-    :param bgcolor: Background color of the visualization (default: white)
-    :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
-    :param graph_title: Sets the title of the visualization (if provided)
+    :param ocel: Object-centric event log
+    :param graph: Object graph
+    :param format: Format of the visualization (if 'html' is provided, GraphvizJS is used)
+    :param bgcolor: Background color (default: white)
+    :param rankdir: Graph direction ("LR" or "TB")
+    :param graph_title: Title of the visualization (if provided)
 
     .. code-block:: python3
 
@@ -1412,14 +1422,14 @@ def view_object_graph(ocel: OCEL, graph: Set[Tuple[str, str]], format: str = con
 
 def save_vis_object_graph(ocel: OCEL, graph: Set[Tuple[str, str]], file_path: str, bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None, **kwargs):
     """
-    Saves the visualization of an object graph
+    Saves the visualization of an object graph.
 
-    :param ocel: object-centric event log
-    :param graph: object graph
+    :param ocel: Object-centric event log
+    :param graph: Object graph
     :param file_path: Destination path
-    :param bgcolor: Background color of the visualization (default: white)
-    :param rankdir: sets the direction of the graph ("LR" for left-to-right; "TB" for top-to-bottom)
-    :param graph_title: Sets the title of the visualization (if provided)
+    :param bgcolor: Background color (default: white)
+    :param rankdir: Graph direction ("LR" or "TB")
+    :param graph_title: Title of the visualization (if provided)
 
     .. code-block:: python3
 
