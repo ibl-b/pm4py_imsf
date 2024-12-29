@@ -1,9 +1,9 @@
+colorama
 contourpy
 cycler
 deprecation
 fonttools
 graphviz
-importlib-resources
 intervaltree
 kiwisolver
 lxml
@@ -24,4 +24,3 @@ sortedcontainers
 tqdm
 tzdata
 wheel
-zipp

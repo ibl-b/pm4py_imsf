@@ -6,12 +6,12 @@
     
     | Name | URL | License | Version |
     | --------------------------- | ------------------------------------------------------------ | --------------------------- | ------------------- |
-    | contourpy | https://pypi.org/pypi/contourpy/json | BSD License | 1.3.1 |
+    | colorama | https://pypi.org/pypi/colorama/json | BSD License | 0.4.6 |
+| contourpy | https://pypi.org/pypi/contourpy/json | BSD License | 1.3.1 |
 | cycler | https://pypi.org/pypi/cycler/json | BSD License | 0.12.1 |
 | deprecation | https://pypi.org/pypi/deprecation/json | Apache Software License | 2.1.0 |
 | fonttools | https://pypi.org/pypi/fonttools/json | MIT License | 4.55.3 |
 | graphviz | https://pypi.org/pypi/graphviz/json | MIT License | 0.20.3 |
-| importlib-resources | https://pypi.org/pypi/importlib-resources/json | Apache Software License | 6.4.5 |
 | intervaltree | https://pypi.org/pypi/intervaltree/json | Apache Software License | 3.1.0 |
 | kiwisolver | https://pypi.org/pypi/kiwisolver/json | BSD License | 1.4.8 |
 | lxml | https://pypi.org/pypi/lxml/json | BSD License | 5.3.0 |
@@ -32,4 +32,3 @@
 | tqdm | https://pypi.org/pypi/tqdm/json | Mozilla Public License 2.0 (MPL 2.0) | 4.67.1 |
 | tzdata | https://pypi.org/pypi/tzdata/json | Apache Software License | 2024.2 |
 | wheel | https://pypi.org/pypi/wheel/json | MIT License | 0.45.1 |
-| zipp | https://pypi.org/pypi/zipp/json | MIT License | 3.21.0 |
