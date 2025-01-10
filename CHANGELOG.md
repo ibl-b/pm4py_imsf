@@ -1,7 +1,7 @@
 # Changelog of pm4py
 
 
-## pm4py 2.7.15 (2024.12.XX)
+## pm4py 2.7.15 (2025.01.10)
 
 ### Added
 * 861cb56c478ed7fd485f88a2304506af33c180e4
