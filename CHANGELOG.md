@@ -28,6 +28,16 @@
   * prefix tree to Petri net converter
 * 05a67b30c313d90570911a52662d346ac3814e59
   * improved LLM integration
+* b81acabb754af91fb4369eab66f9514571379164
+  * performance aggregation key in discover_performance_dfg
+* 1ae6e6513c5597f13135986f09cf45cb2bb21c70
+  * streaming conformance checking on DECLARE models
+* d008b267bea269e7723baa0642929542c29284b8
+  * max length parameter to prefix tree generation
+* aec4de4220434a6c87d956d07bda4c7c093069b8
+  * possible visualization formats specified in the simplified interface vis.py
+* 7045e33774946387eb2c180e088262437234bfd1
+  * Git pipeline for tests execution
 
 ### Changed
 * 102c5fa10a5755b45b6ed5c8e6e3587c609defbe
@@ -52,6 +62,10 @@
   * improved inductive miner fallthrough
 * 7057b867b394d311eff3f09e03aac659c67e90c5
   * performance improvement search_graph_pt
+* 85e029f12dd66434e2032537ddaffab121c3586f
+  * removed unused variant tweaked_state_equation_a_star
+* 8f70c60d11e1a3afec94f3f36445c40cc5a46f0a
+  * extended examples for DFG interaction
 
 ### Deprecated
 
