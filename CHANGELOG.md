@@ -4,6 +4,30 @@
 ## pm4py 2.7.15 (2024.12.XX)
 
 ### Added
+* 861cb56c478ed7fd485f88a2304506af33c180e4
+  * DFG filtering in simplified interface
+* 5085c6f1506a4f0f588706bc0287702e5e78c7ea
+  * added the plain .gv as output format for Graphviz visualizations
+* 113b5dd51a3ca2d526e9689dadcb817e4e730e29
+  * hash function OCEL object
+* 6130257779b6a5afeb8cf02610bdaba6e3034ada
+  * hash function prefix tree object
+* 51f469ca087e82d2bdc4290d1453de2fb53c9647
+  * hash function for the transition system object
+* 2c216554fc13f9741eb4a3d36f29f97b9c148f0a
+  * correlation miner in the simplified interface
+* fce422fe29585f5b94c401c80438a10dc36d3e82
+  * visualization variant for OC-DFG
+* 581d65a7ff46432a98a3e987a18e4cd47b9b6feb
+  * color arcs performance DFG visualization
+* 8434b2fcf3669030e71f9d4f718b921363dd810d
+  * simplified interface Petri net visualization
+* 8b2415e5e02b25b51a4f70785aec2ad2cf599260
+  * possibility to specify the title in some visualizations
+* 47fefe1fb53414f54c2e62d973aecb2fa293f238
+  * prefix tree to Petri net converter
+* 05a67b30c313d90570911a52662d346ac3814e59
+  * improved LLM integration
 
 ### Changed
 * 102c5fa10a5755b45b6ed5c8e6e3587c609defbe
@@ -18,6 +42,16 @@
   * updated RSTs
 * 9771d21db743250b02ba0202d8f65735a24f67ee
   * revised documentation of pm4py
+* f64288071c31f986c61ce68990b4656867f7aec2
+  * replaced pyEMD
+* 4e0c4426d1f8010d409859210ab1f58552da6b7f
+  * max_tokens specification in pm4py.llm connectors.
+* df6c9708966ea254f3263adb9ed637f7df773e73
+  * deterministic order of children in prefix tree visualization.
+* 128166de99303f86d72fc2bd3e2d3a850411e0c1
+  * improved inductive miner fallthrough
+* 7057b867b394d311eff3f09e03aac659c67e90c5
+  * performance improvement search_graph_pt
 
 ### Deprecated
 

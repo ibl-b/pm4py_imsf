@@ -4,6 +4,7 @@ import sys
 import traceback
 import importlib.util
 
+import pm4py.util.lp.solver
 
 EXECUTE_EXAMPLES = True
 
@@ -900,6 +901,38 @@ def execute_script(f):
         input("\npress INPUT if you want to continue")
 
 
+def print_versions():
+    import pm4py
+    import numpy
+    import pandas
+    import networkx
+
+    print("numpy version: "+str(numpy.__version__))
+    print("pandas version: "+str(pandas.__version__))
+    print("networkx version: "+str(networkx.__version__))
+
+    if importlib.util.find_spec("scipy"):
+        import scipy
+        print("scipy version: "+str(scipy.__version__))
+
+    if importlib.util.find_spec("lxml"):
+        import lxml
+        print("lxml version: "+str(lxml.__version__))
+
+    if importlib.util.find_spec("matplotlib"):
+        import matplotlib
+        print("matplotlib version: "+str(matplotlib.__version__))
+
+    if importlib.util.find_spec("sklearn"):
+        import sklearn
+        print("sklearn version: "+str(sklearn.__version__))
+
+    print("pm4py version: "+str(pm4py.__version__))
+    print("Python version: "+str(sys.version))
+    print(pm4py.util.lp.solver.DEFAULT_LP_SOLVER_VARIANT)
+    print(pm4py.util.pandas_utils.DATAFRAME)
+
+
 def main():
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))))
 
@@ -912,6 +945,8 @@ def main():
     pm4py.util.constants.SHOW_EVENT_LOG_DEPRECATION = False
     pm4py.util.constants.SHOW_INTERNAL_WARNINGS = False
     #pm4py.util.constants.DEFAULT_TIMESTAMP_PARSE_FORMAT = None
+
+    print_versions()
 
     if EXECUTE_EXAMPLES:
         execute_script(inductive_miner_dfg_lc)
@@ -1045,30 +1080,26 @@ def main():
         #execute_script(monte_carlo_dfg)
         #execute_script(monte_carlo_petri_net)
 
-    print("numpy version: "+str(numpy.__version__))
-    print("pandas version: "+str(pandas.__version__))
-    print("networkx version: "+str(networkx.__version__))
-
-    if importlib.util.find_spec("scipy"):
-        import scipy
-        print("scipy version: "+str(scipy.__version__))
-
-    if importlib.util.find_spec("lxml"):
-        import lxml
-        print("lxml version: "+str(lxml.__version__))
-
-    if importlib.util.find_spec("matplotlib"):
-        import matplotlib
-        print("matplotlib version: "+str(matplotlib.__version__))
-
-    if importlib.util.find_spec("sklearn"):
-        import sklearn
-        print("sklearn version: "+str(sklearn.__version__))
-
-    print("pm4py version: "+str(pm4py.__version__))
-    print("Python version: "+str(sys.version))
+    print_versions()
 
     print("\n\nExamples executed correctly: %d\tExamples failed: %d\t" % (OutcomeMeasurement.SUCCESS, OutcomeMeasurement.FAILED))
+
+    # Compute the total and pass ratio
+    total_runs = OutcomeMeasurement.SUCCESS + OutcomeMeasurement.FAILED
+    if total_runs > 0:
+        pass_ratio = OutcomeMeasurement.SUCCESS / total_runs
+    else:
+        pass_ratio = 0.0
+
+    print(f"Overall pass ratio: {round(pass_ratio * 100, 2)}%")
+
+    # If pass ratio is above 90%, exit code is 0; otherwise 1
+    if pass_ratio > 0.9:
+        #print("exiting with code 0")
+        sys.exit(0)
+    else:
+        #print("exiting with code 1")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
