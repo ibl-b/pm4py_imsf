@@ -683,13 +683,14 @@ def discover_transition_system(log: Union[EventLog, pd.DataFrame], direction: st
     return ts_discovery.apply(log, parameters=properties)
 
 
-def discover_prefix_tree(log: Union[EventLog, pd.DataFrame], activity_key: str = "concept:name", timestamp_key: str = "time:timestamp", case_id_key: str = "case:concept:name") -> Trie:
+def discover_prefix_tree(log: Union[EventLog, pd.DataFrame], max_path_length: Optional[int] = None, activity_key: str = "concept:name", timestamp_key: str = "time:timestamp", case_id_key: str = "case:concept:name") -> Trie:
     """
     Discovers a Prefix Tree from the provided log.
 
     A Prefix Tree represents all the unique prefixes of activity sequences in the log.
 
     :param log: Event log or Pandas DataFrame.
+    :param max_path_length: maximum path length (each trace is trimmed afterwards).
     :param activity_key: Attribute to be used for the activity (default: "concept:name").
     :param timestamp_key: Attribute to be used for the timestamp (default: "time:timestamp").
     :param case_id_key: Attribute to be used as case identifier (default: "case:concept:name").
@@ -716,6 +717,8 @@ def discover_prefix_tree(log: Union[EventLog, pd.DataFrame], activity_key: str =
     properties = get_properties(
         log, activity_key=activity_key, timestamp_key=timestamp_key, case_id_key=case_id_key)
 
+    properties["max_path_length"] = max_path_length
+    
     from pm4py.algo.transformation.log_to_trie import algorithm as trie_discovery
     return trie_discovery.apply(log, parameters=properties)
 
