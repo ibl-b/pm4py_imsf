@@ -1,4 +1,4 @@
-'''
+"""
     PM4Py – A Process Mining Library for Python
 Copyright (C) 2024 Process Intelligence Solutions UG (haftungsbeschränkt)
 
@@ -18,6 +18,6 @@ visit <https://www.gnu.org/licenses/>.
 
 Website: https://processintelligence.solutions
 Contact: info@processintelligence.solutions
-'''
-from pm4py.algo.discovery.inductive.variants import abc, im, imd, imf
+"""
 
+from pm4py.algo.discovery.inductive.variants import abc, im, imd, imf, imsfs
