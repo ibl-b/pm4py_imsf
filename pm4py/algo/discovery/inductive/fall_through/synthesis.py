@@ -31,18 +31,38 @@ from pm4py.objects.process_tree.obj import ProcessTree, Operator
 from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pulp import LpProblem, LpMinimize, LpVariable, lpSum, LpStatus
 
+from pm4py.objects.dfg.obj import DFG
+from copy import deepcopy
+
 # pulp, scipy möglich -> bei LP-Miner schauen, was von PM4Py verwendet wird -> nutzt solver und petrinetze
 from pm4py.util.lp import solver as synth_solver
 
 from pm4py.objects.petri_net.utils import petri_utils
 from pm4py import vis
 
+
+from pm4py.convert import convert_to_process_tree
+
 # Ziel
 
 
 # TODO KLassenmethode holds implementieren? Prüft, ob der Ansatz für die gegebene Datenstruktur (IMDataStructureUVCL) anwendbar ist
 # TODO in der Factory Datei registrieren
+# TODO wie berechne ich die finale Markierung??
 class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
+
+    def _filter_traces(
+        obj: IMDataStructureUVCL, threshold: float
+    ) -> IMDataStructureUVCL:
+        # Filter infrequent traces to keep the synthesized net a bit simpler
+        number_of_traces = obj.data_structure.total
+        trace_treshhold = number_of_traces * threshold
+        filtered_traces = deepcopy(obj.data_structure)
+        for trace in filtered_traces:
+            if trace.count < trace_treshhold:
+                del filtered_traces[trace]
+        # dfg sollte automatisch erstellt werden
+        return IMDataStructureUVCL(obj.data_structure)
 
     def _get_token_trails(
         obj: IMDataStructureUVCL, parameters: Optional[Dict[str, Any]]
@@ -268,17 +288,18 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         manager=None,
         parameters: Optional[Dict[str, Any]] = None,
     ) -> Optional[
-        Tuple[PetriNet, Marking, Marking]
+        ProcessTree
     ]:  # Optional[Tuple[ProcessTree, List[IMDataStructureUVCL]]]:
 
+        filtered_obj = SynthesisUVCL._filter_traces(obj, 0.1)
         # Token Trails erstellen
         token_trails, initial_places, num_places = SynthesisUVCL._get_token_trails(
-            obj, parameters
+            filtered_obj, parameters
         )
 
         # Netz erstellen #TODO wird activities überhaupt benötigt?
         # TODO Funktion add_transition aus petri net utils verwenden?
-        net, activities, im, fm = SynthesisUVCL._init_net(obj)
+        net, activities, im, fm = SynthesisUVCL._init_net(filtered_obj)
 
         net_places = SynthesisUVCL._solve_ilp_problem(
             token_trails, initial_places, num_places
@@ -307,9 +328,9 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
                 for activity in place["edges_out"]:
                     transition = petri_utils.get_transition_by_name(net, activity)
                     petri_utils.add_arc_from_to(fr=net_place, to=transition, net=net)
-                # source = PetriNet.Place("source")
-                # net.places.add(source)
-                # im[source] = int(place["marking"])
+
         vis.view_petri_net(net, im, fm, format="svg")
 
-        return
+        pt = convert_to_process_tree(net, im, fm)
+
+        return pt

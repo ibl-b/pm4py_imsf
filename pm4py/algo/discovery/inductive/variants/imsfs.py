@@ -30,6 +30,7 @@ from pm4py.algo.discovery.inductive.fall_through.synthesis import SynthesisUVCL
 from pm4py.algo.discovery.inductive.variants.abc import InductiveMinerFramework
 from pm4py.algo.discovery.inductive.variants.instances import IMInstance
 from pm4py.objects.process_tree.obj import ProcessTree
+from pm4py.algo.discovery.inductive.fall_through.empty_traces import EmptyTracesUVCL
 
 
 T = TypeVar("T", bound=IMDataStructureLog)
@@ -50,15 +51,20 @@ class IMSFSUVCL(IMSFS[IMDataStructureUVCL]):
     ) -> ProcessTree:
         # TODO empty traces hier nötig? siehe andere varianten
 
+        empty_traces = EmptyTracesUVCL.apply(obj, parameters)
+        if empty_traces is not None:
+            return self._recurse(empty_traces[0], empty_traces[1], parameters)
         tree = self.apply_base_cases(obj, parameters)
-        # if tree is None:
-        # cut = self.find_cut(obj, parameters)
-        # if cut is not None:
-        # tree = self._recurse(cut[0], cut[1], parameters=parameters)
+        if tree is None:
+            cut = self.find_cut(obj, parameters)
+            if cut is not None:
+                tree = self._recurse(cut[0], cut[1], parameters=parameters)
         if tree is None:
             ft = SynthesisUVCL.apply(obj, parameters)
+
             # recurse baut baum stück für stück auf --> muss vermutlich überschrieben werden, damit ganzer baum eingefügt werden kann
+            if isinstance(ft, ProcessTree):
+                tree = ft
             # tree = self._recurse(ft[0], ft[1], parameters=parameters)
-            tree = ft[0]
 
         return tree

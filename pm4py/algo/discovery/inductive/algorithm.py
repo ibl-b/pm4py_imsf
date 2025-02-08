@@ -34,6 +34,7 @@ from pm4py.algo.discovery.inductive.dtypes.im_ds import (
 from pm4py.algo.discovery.inductive.variants.im import IMUVCL
 from pm4py.algo.discovery.inductive.variants.imf import IMFUVCL
 from pm4py.algo.discovery.inductive.variants.imd import IMD
+from pm4py.algo.discovery.inductive.variants.imsfs import IMSFSUVCL
 from pm4py.algo.discovery.inductive.variants.instances import IMInstance
 from pm4py.objects.dfg.obj import DFG
 from pm4py.objects.log.obj import EventLog
