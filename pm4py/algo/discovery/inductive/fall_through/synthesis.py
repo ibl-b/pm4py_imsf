@@ -25,7 +25,7 @@ from pm4py.algo.discovery.inductive.dtypes.im_ds import (
     IMDataStructureDFG,
 )
 from pm4py.algo.discovery.inductive.fall_through.abc import FallThrough
-from typing import Optional, Tuple, List, Dict, Any
+from typing import Optional, Tuple, List, Dict, Any, Counter
 from collections import defaultdict
 from pm4py.objects.process_tree.obj import ProcessTree, Operator
 from pm4py.objects.petri_net.obj import PetriNet, Marking
@@ -40,6 +40,8 @@ from pm4py.util.lp import solver as synth_solver
 from pm4py.objects.petri_net.utils import petri_utils
 from pm4py import vis
 
+from pm4py.objects.dfg.obj import DFG
+
 
 from pm4py.convert import convert_to_process_tree
 
@@ -48,35 +50,58 @@ from pm4py.convert import convert_to_process_tree
 
 # TODO KLassenmethode holds implementieren? Prüft, ob der Ansatz für die gegebene Datenstruktur (IMDataStructureUVCL) anwendbar ist
 # TODO in der Factory Datei registrieren
-# TODO wie berechne ich die finale Markierung??
+# TODO wie berechne ich die finale Markierung? Was genau ist die final Marking?
+# TODO prüfen: in manchen Funktionen wird als Marking immer 1 gewählt -> sind abweichende Zahlen möglich?
 class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
 
     def _filter_traces(
         obj: IMDataStructureUVCL, threshold: float
     ) -> IMDataStructureUVCL:
-        # Filter infrequent traces to keep the synthesized net a bit simpler
-        number_of_traces = obj.data_structure.total
-        trace_treshhold = number_of_traces * threshold
+        number_of_traces = sum(obj.data_structure.values())
+        trace_treshold = number_of_traces * threshold
+        # später entfernen; um nicht zu viele traces zu löschen
+        if trace_treshold > 0:
+            trace_treshold = 50
         filtered_traces = deepcopy(obj.data_structure)
-        for trace in filtered_traces:
-            if trace.count < trace_treshhold:
+        for trace in obj.data_structure:
+            if filtered_traces[trace] < trace_treshold:
                 del filtered_traces[trace]
         # dfg sollte automatisch erstellt werden
-        return IMDataStructureUVCL(obj.data_structure)
+        return IMDataStructureUVCL(filtered_traces)
+
+    # Start und Endaktivität einfügen
+    def _set_start_and_end(obj: IMDataStructureUVCL) -> IMDataStructureUVCL:
+        traces = obj.data_structure
+        new_traces = Counter()
+        for trace, count in traces.items():
+            new_trace = ("Start",) + trace + ("Stop",)
+            new_traces[new_trace] = count
+
+        return IMDataStructureUVCL(new_traces)
 
     def _get_token_trails(
         obj: IMDataStructureUVCL, parameters: Optional[Dict[str, Any]]
-    ) -> Tuple[List[Dict[str, Any]], List[int], int]:
+    ) -> Tuple[List[Dict[str, Any]], List[int], int, List[str], List[str]]:
         token_trails = []
-        initial_places = []
+        initial_token_places = []
+        initial_activities = []
+        final_activities = []
+
         current_place = 0
         log = getattr(obj, "data_structure", [])
 
         # TODO prüfen, wo Fehler geworfen werden sollten, wenn Eingabe nicht wie erwartet (UVCL, Counter...)
         for trace in log:
+            # TODO brauche ich die initial activities tatsächlich?
+            initial_activity = trace[0]
+            final_activity = trace[-1]
+            if initial_activity not in initial_activities:
+                initial_activities.append(initial_activity)
+            if final_activity not in final_activities:
+                final_activities.append(final_activity)
             current_place += 1
             start_place = current_place
-            initial_places.append(start_place)
+            initial_token_places.append(start_place)
 
             for activity in trace:
                 current_place += 1
@@ -88,7 +113,13 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
                 )
                 start_place = current_place
 
-        return token_trails, initial_places, current_place
+        return (
+            token_trails,
+            initial_token_places,
+            current_place,
+            initial_activities,
+            final_activities,
+        )
 
     def _get_rise_places(
         token_trails: List[Dict[str, Any]]
@@ -167,6 +198,12 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
                         first_diff == current_diff,
                         f"Activity {activity}: equal rise iteration {i}",
                     )
+            # else:
+            # TODO: was wenn diese Aktivität nur einmal vorkommt?
+            # problem += (
+            # vars[places[0][1] - 1] - vars[places[0][0] - 1] == 0,
+            # f"Activity {activity}: rise = 0 for single transition",
+            # )
 
     def _get_attribute(
         place_no: int, current_value: float, previous_value: float
@@ -277,6 +314,127 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
 
         return net_places
 
+    def _insert_net_places(
+        net: PetriNet, im: Marking, fm: Marking, net_places: defaultdict
+    ) -> Tuple[PetriNet, Marking, Marking]:
+        for place_no, place in net_places.items():
+            if not (place["edges_in"] or place["edges_out"]):
+                raise ValueError(f"Invalid place without any edges.")
+            else:
+                net_place = petri_utils.add_place(net)
+                if place["marking"] > 0:
+                    im[net_place] = int(place["marking"])
+                # innerer Platz
+                if place["edges_in"] and place["edges_out"]:
+                    for activity in place["edges_in"]:
+                        transition = petri_utils.get_transition_by_name(net, activity)
+                        petri_utils.add_arc_from_to(
+                            fr=transition, to=net_place, net=net
+                        )
+                    for activity in place["edges_out"]:
+                        transition = petri_utils.get_transition_by_name(net, activity)
+                        petri_utils.add_arc_from_to(
+                            fr=net_place, to=transition, net=net
+                        )
+                elif place.get("edges_in") == ["Stop"]:
+                    transition = petri_utils.get_transition_by_name(net, "Stop")
+                    petri_utils.add_arc_from_to(fr=transition, to=net_place, net=net)
+                    fm[net_place] = int(place["marking"])
+                elif place.get("edges_out") == ["Start"]:
+                    transition = petri_utils.get_transition_by_name(net, "Start")
+                    petri_utils.add_arc_from_to(fr=net_place, to=transition, net=net)
+                # kein valider Platz
+                else:
+                    petri_utils.remove_place(net, net_place)
+        return net, im, fm
+
+    def _create_wf_net(
+        net: PetriNet, im: Marking, fm: Marking, initial_activities: List[str]
+    ) -> Tuple[PetriNet, Marking]:
+        source = []
+        sink = []
+        updated_im = Marking()
+        updated_fm = Marking()
+        is_loop_source = False
+
+        for place in net.places:
+            if len(place.out_arcs) > 0 and len(place.in_arcs) == 0:
+                source.append(place)
+            if len(place.in_arcs) > 0 and len(place.out_arcs) == 0:
+                sink.append(place)
+
+        # source Plätze finden, bei denen ggf. Loop vorliegt
+        for place in im:
+            if place not in source:
+                for arc in place.out_arcs:
+                    if arc.target.name in initial_activities:
+                        source.append(place)
+                        is_loop_source = True
+                        break
+
+        if len(source) != 1 or is_loop_source:
+            new_source = petri_utils.add_place(net, "global_source")
+            for place in source:
+                silent_transition = petri_utils.add_transition(net, "t_source")
+                petri_utils.add_arc_from_to(
+                    fr=new_source, to=silent_transition, net=net
+                )
+                petri_utils.add_arc_from_to(fr=silent_transition, to=place, net=net)
+            # Markierung updaten
+            source_marking = Marking()
+
+            for place in source:
+                source_marking[place] = im[place]
+            updated_im[new_source] = 0
+            # Marken umverteilen von ursprünglichen Plätzen
+            while source_marking:
+                updated_im[new_source] += 1
+                remove_places = []
+                for place in list(source_marking):
+                    source_marking[place] -= 1
+                    if source_marking[place] == 0:
+                        remove_places.append(place)
+                for place in remove_places:
+                    del source_marking[place]
+            # alte Plätze behalten, die nicht zu source gehören, aber markierung haben
+            for place in im:
+                if place not in source:
+                    updated_im[place] = im[place]
+
+        # keine Anpassung notwendig
+        else:
+            updated_im = im
+
+        if len(sink) != 1:
+            new_sink = petri_utils.add_place(net, "global_sink")
+            for place in sink:
+                silent_transition = petri_utils.add_transition(
+                    net, f"t_sink_{place.name}"
+                )
+                petri_utils.add_arc_from_to(fr=silent_transition, to=new_sink, net=net)
+                petri_utils.add_arc_from_to(to=silent_transition, fr=place, net=net)
+
+            # TODO wie mit markings != 1 umgehen?
+            updated_fm[new_sink] = 1
+
+        else:
+            # TODO anders lösen / direkt über keys
+            for place in sink:
+                updated_fm[place] = 1
+        # remove single transitions
+        cleaned_net = petri_utils.remove_unconnected_components(net)
+        # wenn transition entfernt wurde, kann jetzt ein leerer Platz übrig sein -> TODO kann er auch nur ausgehende kanten haben??
+        places = list(net.places)
+        for place in places:
+            if (
+                len(place.in_arcs) > 0
+                and len(place.out_arcs) == 0
+                and place not in updated_fm
+            ):
+                petri_utils.remove_place(cleaned_net, place)
+
+        return cleaned_net, updated_im, updated_fm
+
     # wird angewandt, wenn holds true zurückgibt
     @classmethod
     # cls: die Klasse selbst (wenn es kein Objekt der Klasse gibt, ansonsten self), obj = event log, pool = multiprocessing pool (falls mehrere Prozesse parallel), manager = multiprocessing manager, optional zusätzliche Parameter??
@@ -291,46 +449,40 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         ProcessTree
     ]:  # Optional[Tuple[ProcessTree, List[IMDataStructureUVCL]]]:
 
+        # Optional: Traces filtern
         filtered_obj = SynthesisUVCL._filter_traces(obj, 0.1)
+        filtered_obj = SynthesisUVCL._set_start_and_end(filtered_obj)
+
         # Token Trails erstellen
-        token_trails, initial_places, num_places = SynthesisUVCL._get_token_trails(
-            filtered_obj, parameters
-        )
+        (
+            token_trails,
+            initial_places,
+            num_places,
+            initial_activities,
+            final_activities,
+        ) = SynthesisUVCL._get_token_trails(filtered_obj, parameters)
 
         # Netz erstellen #TODO wird activities überhaupt benötigt?
-        # TODO Funktion add_transition aus petri net utils verwenden?
         net, activities, im, fm = SynthesisUVCL._init_net(filtered_obj)
 
         net_places = SynthesisUVCL._solve_ilp_problem(
             token_trails, initial_places, num_places
         )
 
-        for place_no, place in net_places.items():
-            if not (place["edges_in"] or place["edges_out"]):
-                raise ValueError(f"Invalid place without any edges.")
-            elif place["edges_in"] and place["edges_out"]:
-                net_place = petri_utils.add_place(net)
-                for activity in place["edges_in"]:
-                    transition = petri_utils.get_transition_by_name(net, activity)
-                    petri_utils.add_arc_from_to(fr=transition, to=net_place, net=net)
-                for activity in place["edges_out"]:
-                    transition = petri_utils.get_transition_by_name(net, activity)
-                    petri_utils.add_arc_from_to(fr=net_place, to=transition, net=net)
-            elif place["edges_in"]:
-                net_place = petri_utils.add_place(net)
-                for activity in place["edges_in"]:
-                    transition = petri_utils.get_transition_by_name(net, activity)
-                    petri_utils.add_arc_from_to(fr=transition, to=net_place, net=net)
-                # sink = PetriNet.Place("sink")
-                # net.places.add(sink)
-            elif place["edges_out"]:
-                net_place = petri_utils.add_place(net)
-                for activity in place["edges_out"]:
-                    transition = petri_utils.get_transition_by_name(net, activity)
-                    petri_utils.add_arc_from_to(fr=net_place, to=transition, net=net)
+        net, im, fm = SynthesisUVCL._insert_net_places(net, im, fm, net_places)
 
         vis.view_petri_net(net, im, fm, format="svg")
 
-        pt = convert_to_process_tree(net, im, fm)
+        # workflow_net, updated_im, updated_fm = SynthesisUVCL._create_wf_net(
+        # net, im, fm, initial_activities
+        # )
+
+        # vis.view_petri_net(workflow_net, updated_im, updated_fm, format="svg")
+
+        pt = convert_to_process_tree(
+            net,
+            im,
+            fm,
+        )
 
         return pt

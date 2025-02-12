@@ -55,16 +55,16 @@ class IMSFSUVCL(IMSFS[IMDataStructureUVCL]):
         if empty_traces is not None:
             return self._recurse(empty_traces[0], empty_traces[1], parameters)
         tree = self.apply_base_cases(obj, parameters)
-        if tree is None:
-            cut = self.find_cut(obj, parameters)
-            if cut is not None:
-                tree = self._recurse(cut[0], cut[1], parameters=parameters)
+        # if tree is None:
+        # cut = self.find_cut(obj, parameters)
+        # if cut is not None:
+        # tree = self._recurse(cut[0], cut[1], parameters=parameters)
         if tree is None:
             ft = SynthesisUVCL.apply(obj, parameters)
 
             # recurse baut baum stück für stück auf --> muss vermutlich überschrieben werden, damit ganzer baum eingefügt werden kann
             if isinstance(ft, ProcessTree):
-                tree = ft
+                return ft
             # tree = self._recurse(ft[0], ft[1], parameters=parameters)
 
         return tree
