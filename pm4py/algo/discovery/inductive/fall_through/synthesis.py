@@ -34,6 +34,8 @@ from pulp import LpProblem, LpMinimize, LpVariable, lpSum, LpStatus
 from pm4py.objects.dfg.obj import DFG
 from copy import deepcopy
 
+import numpy as np
+
 # pulp, scipy möglich -> bei LP-Miner schauen, was von PM4Py verwendet wird -> nutzt solver und petrinetze
 from pm4py.util.lp import solver as synth_solver
 
@@ -57,14 +59,19 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
     def _filter_traces(
         obj: IMDataStructureUVCL, threshold: float
     ) -> IMDataStructureUVCL:
-        number_of_traces = sum(obj.data_structure.values())
-        trace_treshold = number_of_traces * threshold
-        # später entfernen; um nicht zu viele traces zu löschen
-        if trace_treshold > 0:
-            trace_treshold = 50
-        filtered_traces = deepcopy(obj.data_structure)
-        for trace in obj.data_structure:
-            if filtered_traces[trace] < trace_treshold:
+        
+        traces = obj.data_structure
+        total_traces = sum(traces.values())
+        trace_threshold = total_traces * threshold
+        sorted_counts = sorted(traces.values())  
+        cumulative_counts = np.cumsum(sorted_counts)
+        # max 1% entfernen
+        quarter_threshold = sorted_counts[np.searchsorted(cumulative_counts, total_traces / 100)]
+        final_threshold = min(trace_threshold, quarter_threshold)
+
+        filtered_traces = deepcopy(traces)
+        for trace in traces:
+            if filtered_traces[trace] < final_threshold:
                 del filtered_traces[trace]
         # dfg sollte automatisch erstellt werden
         return IMDataStructureUVCL(filtered_traces)
@@ -79,13 +86,28 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
 
         return IMDataStructureUVCL(new_traces)
 
+    def _filter_short_loops(obj: IMDataStructureUVCL) -> IMDataStructureUVCL:
+        traces = obj.data_structure
+        new_traces = Counter()
+        for trace, count in traces.items():
+            new_trace = []
+            prev_activity = None
+            for activity in trace:
+                if activity != prev_activity:
+                    new_trace.append(activity)
+                    prev_activity = activity
+            new_traces[tuple(new_trace)] = count
+
+        return IMDataStructureUVCL(new_traces)
+
     def _get_token_trails(
         obj: IMDataStructureUVCL, parameters: Optional[Dict[str, Any]]
-    ) -> Tuple[List[Dict[str, Any]], List[int], int, List[str], List[str]]:
+    ) -> Tuple[List[Dict[str, Any]], List[int], List[int], int]:
         token_trails = []
         initial_token_places = []
-        initial_activities = []
-        final_activities = []
+        final_token_places = []
+        # initial_activities = []
+        # final_activities = []
 
         current_place = 0
         log = getattr(obj, "data_structure", [])
@@ -93,13 +115,12 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         # TODO prüfen, wo Fehler geworfen werden sollten, wenn Eingabe nicht wie erwartet (UVCL, Counter...)
         for trace in log:
             # TODO brauche ich die initial activities tatsächlich?
-            initial_activity = trace[0]
-            final_activity = trace[-1]
-            if initial_activity not in initial_activities:
-                initial_activities.append(initial_activity)
-            if final_activity not in final_activities:
-                final_activities.append(final_activity)
-            current_place += 1
+            # initial_activity = trace[0]
+            # final_activity = trace[-1]
+            # if initial_activity not in initial_activities:
+            # initial_activities.append(initial_activity)
+            # if final_activity not in final_activities:
+            # final_activities.append(final_activity)
             start_place = current_place
             initial_token_places.append(start_place)
 
@@ -113,12 +134,16 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
                 )
                 start_place = current_place
 
+            final_token_places.append(start_place)
+            current_place += 1
+
         return (
             token_trails,
             initial_token_places,
+            final_token_places,
             current_place,
-            initial_activities,
-            final_activities,
+            # initial_activities,
+            # final_activities,
         )
 
     def _get_rise_places(
@@ -148,13 +173,6 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         net = PetriNet("imsfs")
         im = Marking()
         fm = Marking()
-        # source = PetriNet.Place("source")
-        # sink = PetriNet.Place("sink")
-        # net.places.add(source)
-        # net.places.add(sink)
-        # TODO initial/final Marking source und sink 1 oder 0?
-        # im[source] = 1
-        # fm[sink] = 1
 
         trans_map = {}
 
@@ -170,19 +188,28 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         return net, activities, im, fm
 
     def _add_initial_constraints(
-        problem: LpProblem, vars: List[LpVariable], initial_places: List[int]
+        problem: LpProblem,
+        vars: List[LpVariable],
+        initial_places: List[int],
+        final_places: List[int],
     ):
         # Nebenbedingung 1: leeren Token Trail verbieten
         problem += lpSum(vars) >= 1, "Prohibit the empty trail"
 
         # Nebenbedingungen: Initialmarkierung gleich
         if len(initial_places) > 1:
-            first_place = vars[initial_places[0] - 1]
+            first_place = vars[initial_places[0]]
             for i in range(1, len(initial_places)):
                 problem += (
-                    first_place == vars[initial_places[i] - 1],
+                    first_place == vars[initial_places[i]],
                     f"Equal initial marking iteration {i}",
                 )
+        # Nebenbedingungen: Pätze müssen am nach Durchlauf aller Traces leer sein. Sink nach Stop wird dann aber nicht mehr erzeugt
+        if len(final_places) > 1:
+            problem += (
+                lpSum(vars[i] for i in final_places) <= 1,
+                "Empty Places after each trace for wf-net",
+        )
 
     def _add_rise_constraints(
         problem: LpProblem,
@@ -191,9 +218,9 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
     ):
         for activity, places in rise_places.items():
             if len(places) > 1:
-                first_diff = vars[places[0][1] - 1] - vars[places[0][0] - 1]
+                first_diff = vars[places[0][1]] - vars[places[0][0]]
                 for i in range(1, len(places)):
-                    current_diff = vars[places[i][1] - 1] - vars[places[i][0] - 1]
+                    current_diff = vars[places[i][1]] - vars[places[i][0]]
                     problem += (
                         first_diff == current_diff,
                         f"Activity {activity}: equal rise iteration {i}",
@@ -208,12 +235,14 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
     def _get_attribute(
         place_no: int, current_value: float, previous_value: float
     ) -> Optional[str]:
-        if place_no == 1:
+        if place_no == 0:
             return "initial"
         if current_value - previous_value > 0:
             return "added"
         if current_value - previous_value < 0:
             return "removed"
+        #if current_value - previous_value == 0 and current_value == 1:
+            #return "potential_loop"
         return None
 
     # TODO bei consume eventuell doch den Folgeplatz abspeichern um konsistent zu sein?
@@ -260,7 +289,7 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         for solution, token_places in solutions.items():
             for token_place in token_places:
                 place_no = token_place["place_no"]
-                if place_no == 1:
+                if place_no == 0:
                     net_places[solution]["marking"] = token_place["marking"]
                 else:
                     for activity, rise_tuples in rise_places.items():
@@ -268,31 +297,40 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
 
                             if place_no == tup[1]:
 
-                                key = (
-                                    "edges_in"
-                                    if token_place["attribute"] == "added"
-                                    else "edges_out"
-                                )
+                                if token_place["attribute"] == "added":
+                                    key = "edges_in"
+                                elif token_place["attribute"] == "removed":
+                                    key = "edges_out"
+                                #elif token_place["attribute"] == "potential_loop":
+                                    #key = "potential_loop"
                                 if activity not in net_places[solution][key]:
                                     net_places[solution][key].append(activity)
+                                #elif key == "potential_loop":
+                                    #net_places[solution][key].append(activity)
+
         return net_places
 
     def _solve_ilp_problem(
-        token_trails: List[Dict[str, Any]], initial_places: List[int], num_places: int
+        token_trails: List[Dict[str, Any]],
+        initial_places: List[int],
+        final_places: List[int],
+        num_places: int,
     ) -> defaultdict:
 
         # Problem und Variablen
         problem = LpProblem("Minimize_Marking", LpMinimize)
         place_vars = [
             LpVariable(f"p_{i}", lowBound=0, cat="Integer")
-            for i in range(1, num_places + 1)
+            for i in range(0, num_places)
         ]
 
         # Zielfunktion
         problem += lpSum(place_vars), "Total Marking of the Token Trails"
 
-        # Nebenbedingungen: Leerer Token Trail, Initialmarkierung
-        SynthesisUVCL._add_initial_constraints(problem, place_vars, initial_places)
+        # Nebenbedingungen: Leerer Token Trail, Initialmarkierung, Plätze am Ende leer
+        SynthesisUVCL._add_initial_constraints(
+            problem, place_vars, initial_places, final_places
+        )
 
         # Nebenbedingung: gleicher Rise für gleiche Activities
         rise_places = SynthesisUVCL._get_rise_places(token_trails)
@@ -336,10 +374,17 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
                         petri_utils.add_arc_from_to(
                             fr=net_place, to=transition, net=net
                         )
-                elif place.get("edges_in") == ["Stop"]:
-                    transition = petri_utils.get_transition_by_name(net, "Stop")
-                    petri_utils.add_arc_from_to(fr=transition, to=net_place, net=net)
-                    fm[net_place] = int(place["marking"])
+                # elif place.get("edges_in") == ["Stop"]:
+                elif place["edges_in"]:
+                    # transition = petri_utils.get_transition_by_name(net, "Stop")
+                    # eigentlich bisher Plätze herausgefiltert, die nicht stop sind, um zusätzliche Sinks zu vermeiden
+                    for activity in place["edges_in"]:
+                        transition = petri_utils.get_transition_by_name(net, activity)
+                        petri_utils.add_arc_from_to(
+                            fr=transition, to=net_place, net=net
+                        )
+                    if place.get("edges_in") == ["Stop"]:
+                        fm[net_place] = int(place["marking"])
                 elif place.get("edges_out") == ["Start"]:
                     transition = petri_utils.get_transition_by_name(net, "Start")
                     petri_utils.add_arc_from_to(fr=net_place, to=transition, net=net)
@@ -349,92 +394,102 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         return net, im, fm
 
     def _create_wf_net(
-        net: PetriNet, im: Marking, fm: Marking, initial_activities: List[str]
-    ) -> Tuple[PetriNet, Marking]:
-        source = []
-        sink = []
-        updated_im = Marking()
-        updated_fm = Marking()
-        is_loop_source = False
+        net: PetriNet, im: Marking, fm: Marking
+    ) -> Tuple[PetriNet, Marking, Marking]:
+        #source = []
+        #sink = []
+        #updated_im = Marking()
+        #updated_fm = Marking()
+        #is_loop_source = False
 
-        for place in net.places:
-            if len(place.out_arcs) > 0 and len(place.in_arcs) == 0:
-                source.append(place)
-            if len(place.in_arcs) > 0 and len(place.out_arcs) == 0:
-                sink.append(place)
+        #for place in net.places:
+            #if len(place.out_arcs) > 0 and len(place.in_arcs) == 0:
+                #source.append(place)
+            #if len(place.in_arcs) > 0 and len(place.out_arcs) == 0:
+                #sink.append(place)
 
         # source Plätze finden, bei denen ggf. Loop vorliegt
-        for place in im:
-            if place not in source:
-                for arc in place.out_arcs:
-                    if arc.target.name in initial_activities:
-                        source.append(place)
-                        is_loop_source = True
-                        break
+        #for place in im:
+            #if place not in source:
+                #for arc in place.out_arcs:
+                    #if arc.target.name in initial_activities:
+                        #source.append(place)
+                        #is_loop_source = True
+                        #break
 
-        if len(source) != 1 or is_loop_source:
-            new_source = petri_utils.add_place(net, "global_source")
-            for place in source:
-                silent_transition = petri_utils.add_transition(net, "t_source")
-                petri_utils.add_arc_from_to(
-                    fr=new_source, to=silent_transition, net=net
-                )
-                petri_utils.add_arc_from_to(fr=silent_transition, to=place, net=net)
+        #if len(source) != 1 or is_loop_source:
+            #new_source = petri_utils.add_place(net, "global_source")
+            #for place in source:
+                #silent_transition = petri_utils.add_transition(net, "t_source")
+                #petri_utils.add_arc_from_to(
+                    #fr=new_source, to=silent_transition, net=net
+                #)
+                #petri_utils.add_arc_from_to(fr=silent_transition, to=place, net=net)
             # Markierung updaten
-            source_marking = Marking()
+            #source_marking = Marking()
 
-            for place in source:
-                source_marking[place] = im[place]
-            updated_im[new_source] = 0
+            #for place in source:
+                #source_marking[place] = im[place]
+            #updated_im[new_source] = 0
             # Marken umverteilen von ursprünglichen Plätzen
-            while source_marking:
-                updated_im[new_source] += 1
-                remove_places = []
-                for place in list(source_marking):
-                    source_marking[place] -= 1
-                    if source_marking[place] == 0:
-                        remove_places.append(place)
-                for place in remove_places:
-                    del source_marking[place]
+            #while source_marking:
+                #updated_im[new_source] += 1
+                #remove_places = []
+                #for place in list(source_marking):
+                    #source_marking[place] -= 1
+                    #if source_marking[place] == 0:
+                        #remove_places.append(place)
+                #for place in remove_places:
+                    #del source_marking[place]
             # alte Plätze behalten, die nicht zu source gehören, aber markierung haben
-            for place in im:
-                if place not in source:
-                    updated_im[place] = im[place]
+            #for place in im:
+                #if place not in source:
+                    #updated_im[place] = im[place]
 
         # keine Anpassung notwendig
-        else:
-            updated_im = im
+        #else:
+            #updated_im = im
 
-        if len(sink) != 1:
-            new_sink = petri_utils.add_place(net, "global_sink")
-            for place in sink:
-                silent_transition = petri_utils.add_transition(
-                    net, f"t_sink_{place.name}"
-                )
-                petri_utils.add_arc_from_to(fr=silent_transition, to=new_sink, net=net)
-                petri_utils.add_arc_from_to(to=silent_transition, fr=place, net=net)
+       # if len(sink) != 1:
+            #new_sink = petri_utils.add_place(net, "global_sink")
+            #for place in sink:
+                #silent_transition = petri_utils.add_transition(
+                    #net, f"t_sink_{place.name}"
+                #)
+                #petri_utils.add_arc_from_to(fr=silent_transition, to=new_sink, net=net)
+                #petri_utils.add_arc_from_to(to=silent_transition, fr=place, net=net)
 
             # TODO wie mit markings != 1 umgehen?
-            updated_fm[new_sink] = 1
+            #updated_fm[new_sink] = 1
 
-        else:
+        #else:
             # TODO anders lösen / direkt über keys
-            for place in sink:
-                updated_fm[place] = 1
+            #for place in sink:
+                #updated_fm[place] = 1
         # remove single transitions
+        
+        # check sink place / add if not existing
+        # TODO kann aktuell auch entfernt werden, da sink beim einfügen in das IM-Netz entfernt wird
+        stop = petri_utils.get_transition_by_name(net, "Stop")
+        if len(stop.out_arcs) == 0:
+            sink = petri_utils.add_place(net, "sink")
+            fm[sink] = 1
+            petri_utils.add_arc_from_to(fr=stop, to=sink, net=net)
+
+
         cleaned_net = petri_utils.remove_unconnected_components(net)
         # wenn transition entfernt wurde, kann jetzt ein leerer Platz übrig sein -> TODO kann er auch nur ausgehende kanten haben??
-        places = list(net.places)
-        for place in places:
-            if (
-                len(place.in_arcs) > 0
-                and len(place.out_arcs) == 0
-                and place not in updated_fm
-            ):
-                petri_utils.remove_place(cleaned_net, place)
+        #places = list(net.places)
+        #for place in places:
+            #if (
+                #len(place.in_arcs) > 0
+                #and len(place.out_arcs) == 0
+                #and place not in fm
+            #):
+                #petri_utils.remove_place(cleaned_net, place)
 
-        return cleaned_net, updated_im, updated_fm
-
+        return cleaned_net, im, fm
+    
     # wird angewandt, wenn holds true zurückgibt
     @classmethod
     # cls: die Klasse selbst (wenn es kein Objekt der Klasse gibt, ansonsten self), obj = event log, pool = multiprocessing pool (falls mehrere Prozesse parallel), manager = multiprocessing manager, optional zusätzliche Parameter??
@@ -452,21 +507,23 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         # Optional: Traces filtern
         filtered_obj = SynthesisUVCL._filter_traces(obj, 0.1)
         filtered_obj = SynthesisUVCL._set_start_and_end(filtered_obj)
+        short_loop_filtered_obj = SynthesisUVCL._filter_short_loops(filtered_obj)
 
         # Token Trails erstellen
         (
             token_trails,
             initial_places,
+            final_places,
             num_places,
-            initial_activities,
-            final_activities,
-        ) = SynthesisUVCL._get_token_trails(filtered_obj, parameters)
+            # initial_activities,
+            # final_activities,
+        ) = SynthesisUVCL._get_token_trails(short_loop_filtered_obj, parameters)
 
         # Netz erstellen #TODO wird activities überhaupt benötigt?
-        net, activities, im, fm = SynthesisUVCL._init_net(filtered_obj)
+        net, activities, im, fm = SynthesisUVCL._init_net(short_loop_filtered_obj)
 
         net_places = SynthesisUVCL._solve_ilp_problem(
-            token_trails, initial_places, num_places
+            token_trails, initial_places, final_places, num_places
         )
 
         net, im, fm = SynthesisUVCL._insert_net_places(net, im, fm, net_places)
@@ -476,13 +533,23 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         # workflow_net, updated_im, updated_fm = SynthesisUVCL._create_wf_net(
         # net, im, fm, initial_activities
         # )
+        workflow_net, im, fm = SynthesisUVCL._create_wf_net(net, im, fm)
 
-        # vis.view_petri_net(workflow_net, updated_im, updated_fm, format="svg")
+        vis.view_petri_net(workflow_net, im, fm, format="svg")
 
-        pt = convert_to_process_tree(
-            net,
-            im,
-            fm,
-        )
+        #pt = convert_to_process_tree(
+            #net,
+            #im,
+            #fm,
+        #)
+        tree = PlaceholderTree(workflow_net, im, fm)
 
-        return pt
+        return tree
+    
+
+class PlaceholderTree(ProcessTree):
+    def __init__(self, petri_net: PetriNet, im: Marking, fm: Marking):
+        super().__init__(label="synth_placeholder")
+        self.petri_net = petri_net
+        self.im = im
+        self.fm = fm

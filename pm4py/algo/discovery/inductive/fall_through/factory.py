@@ -30,6 +30,7 @@ from pm4py.algo.discovery.inductive.fall_through.empty_traces import EmptyTraces
 from pm4py.algo.discovery.inductive.fall_through.flower import FlowerModelUVCL, FlowerModelDFG
 from pm4py.algo.discovery.inductive.fall_through.strict_tau_loop import StrictTauLoopUVCL
 from pm4py.algo.discovery.inductive.fall_through.tau_loop import TauLoopUVCL
+from pm4py.algo.discovery.inductive.fall_through.synthesis import SynthesisUVCL
 from pm4py.algo.discovery.inductive.variants.instances import IMInstance
 from pm4py.objects.process_tree.obj import ProcessTree
 from pm4py.util import exec_utils
@@ -65,6 +66,12 @@ class FallThroughFactory:
                 return [EmptyTracesDFG, FlowerModelDFG]
             else:
                 return [EmptyTracesDFG, FlowerModelDFG]
+            
+        if inst is IMInstance.IMsfs:
+            if disable_fallthroughs:
+                return [EmptyTracesUVCL, SynthesisUVCL]
+            else:
+                return [EmptyTracesUVCL, StrictTauLoopUVCL, SynthesisUVCL]
         return list()
 
     @classmethod
