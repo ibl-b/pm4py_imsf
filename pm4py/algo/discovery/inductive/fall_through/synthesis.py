@@ -205,11 +205,11 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
                     f"Equal initial marking iteration {i}",
                 )
         # Nebenbedingungen: Pätze müssen am nach Durchlauf aller Traces leer sein. Sink nach Stop wird dann aber nicht mehr erzeugt
-        if len(final_places) > 1:
-            problem += (
-                lpSum(vars[i] for i in final_places) <= 1,
-                "Empty Places after each trace for wf-net",
-        )
+        #if len(final_places) > 1:
+            #problem += (
+                #lpSum(vars[i] for i in final_places) == 0,
+                #"Empty Places after each trace for wf-net",
+        #)
 
     def _add_rise_constraints(
         problem: LpProblem,
@@ -493,7 +493,6 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
     # wird angewandt, wenn holds true zurückgibt
     @classmethod
     # cls: die Klasse selbst (wenn es kein Objekt der Klasse gibt, ansonsten self), obj = event log, pool = multiprocessing pool (falls mehrere Prozesse parallel), manager = multiprocessing manager, optional zusätzliche Parameter??
-    # -> Tuple[PetriNet, Marking, Marking]
     def apply(
         cls,
         obj: IMDataStructureUVCL,
@@ -502,7 +501,7 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         parameters: Optional[Dict[str, Any]] = None,
     ) -> Optional[
         ProcessTree
-    ]:  # Optional[Tuple[ProcessTree, List[IMDataStructureUVCL]]]:
+    ]:  
 
         # Optional: Traces filtern
         filtered_obj = SynthesisUVCL._filter_traces(obj, 0.1)
@@ -528,23 +527,20 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
 
         net, im, fm = SynthesisUVCL._insert_net_places(net, im, fm, net_places)
 
-        vis.view_petri_net(net, im, fm, format="svg")
-
-        # workflow_net, updated_im, updated_fm = SynthesisUVCL._create_wf_net(
-        # net, im, fm, initial_activities
-        # )
         workflow_net, im, fm = SynthesisUVCL._create_wf_net(net, im, fm)
 
         vis.view_petri_net(workflow_net, im, fm, format="svg")
 
-        #pt = convert_to_process_tree(
-            #net,
-            #im,
-            #fm,
-        #)
-        tree = PlaceholderTree(workflow_net, im, fm)
+        try:
+           pt = convert_to_process_tree(
+            workflow_net,
+            im,
+            fm,
+        ) 
+        except:
+            pt = PlaceholderTree(workflow_net, im, fm)
 
-        return tree
+        return pt
     
 
 class PlaceholderTree(ProcessTree):

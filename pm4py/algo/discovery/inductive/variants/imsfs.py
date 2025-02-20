@@ -90,11 +90,15 @@ class IMSFSUVCL(IMSFS[IMDataStructureUVCL]):
     def convert_process_tree(tree: ProcessTree) -> Tuple[PetriNet, Marking, Marking]:
         net, initial_marking, final_marking = process_tree_converter.apply(tree)
         leaves = pt_utils.get_leaves(tree)
+        synth_net = None
         for leave in leaves:
             if leave.label == "synth_placeholder":
                 synth_net = leave.petri_net
                 synth_im = leave.im
                 break
+        if not synth_net:
+            return net, initial_marking, final_marking
+
         net_placeholder = None
         for t in net.transitions:
             if t.label == "synth_placeholder":
