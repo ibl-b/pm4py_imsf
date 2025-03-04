@@ -36,6 +36,8 @@ from copy import deepcopy
 
 import numpy as np
 
+import uuid #TODO testen, ob es hier was pm4py internes gibt
+
 # pulp, scipy möglich -> bei LP-Miner schauen, was von PM4Py verwendet wird -> nutzt solver und petrinetze
 from pm4py.util.lp import solver as synth_solver
 
@@ -60,13 +62,15 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         obj: IMDataStructureUVCL, threshold: float
     ) -> IMDataStructureUVCL:
         
+        if threshold == 0:
+            return obj
         traces = obj.data_structure
         total_traces = sum(traces.values())
         trace_threshold = total_traces * threshold
         sorted_counts = sorted(traces.values())  
         cumulative_counts = np.cumsum(sorted_counts)
-        # max 1% entfernen
-        quarter_threshold = sorted_counts[np.searchsorted(cumulative_counts, total_traces / 100)]
+        # max 2% entfernen
+        quarter_threshold = sorted_counts[np.searchsorted(cumulative_counts, total_traces / 50)]
         final_threshold = min(trace_threshold, quarter_threshold)
 
         filtered_traces = deepcopy(traces)
@@ -205,11 +209,11 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
                     f"Equal initial marking iteration {i}",
                 )
         # Nebenbedingungen: Pätze müssen am nach Durchlauf aller Traces leer sein. Sink nach Stop wird dann aber nicht mehr erzeugt
-        #if len(final_places) > 1:
-            #problem += (
-                #lpSum(vars[i] for i in final_places) == 0,
-                #"Empty Places after each trace for wf-net",
-        #)
+        if len(final_places) > 1:
+            problem += (
+                lpSum(vars[i] for i in final_places) == 0,
+                "Empty Places after each trace for wf-net",
+        )
 
     def _add_rise_constraints(
         problem: LpProblem,
@@ -219,42 +223,47 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         for activity, places in rise_places.items():
             if len(places) > 1:
                 first_diff = vars[places[0][1]] - vars[places[0][0]]
+                # Sicherstellen, das WF-Netz erzeugt wird mit maximal einer Marke pro Platz
+                problem += (first_diff >= -1, f"Activity {activity}: rise min constraint")
+                problem += (first_diff <= 1, f"Activity {activity}: rise max constraint")
+
                 for i in range(1, len(places)):
                     current_diff = vars[places[i][1]] - vars[places[i][0]]
                     problem += (
                         first_diff == current_diff,
                         f"Activity {activity}: equal rise iteration {i}",
                     )
-            # else:
+            else:
             # TODO: was wenn diese Aktivität nur einmal vorkommt?
-            # problem += (
-            # vars[places[0][1] - 1] - vars[places[0][0] - 1] == 0,
-            # f"Activity {activity}: rise = 0 for single transition",
-            # )
+                if len(places) == 1:
+                    rise = vars[places[0][1]] - vars[places[0][0]]
+                    problem += (rise >= -1, f"Activity {activity}: rise min constraint")
+                    problem += (rise <= 1, f"Activity {activity}: rise max constraint")
+
 
     def _get_attribute(
-        place_no: int, current_value: float, previous_value: float
+        place_no: int, current_value: float, previous_value: float, initial_places: List[int]
     ) -> Optional[str]:
         if place_no == 0:
             return "initial"
         if current_value - previous_value > 0:
             return "added"
-        if current_value - previous_value < 0:
+        if current_value - previous_value < 0 and place_no not in initial_places:
             return "removed"
-        #if current_value - previous_value == 0 and current_value == 1:
-            #return "potential_loop"
+        if current_value - previous_value == 0 and current_value == 1:
+            return "potential_loop"
         return None
 
     # TODO bei consume eventuell doch den Folgeplatz abspeichern um konsistent zu sein?
     def _update_solutions(
-        place_vars: List[LpVariable], solutions: defaultdict, solution_no: int
+        place_vars: List[LpVariable], solutions: defaultdict, solution_no: int, initial_places: List[int]
     ):
         previous_value = -1
         for var in place_vars:
             place_no = int(var.name.split("_")[1])
             current_value = var.varValue
             attribute = SynthesisUVCL._get_attribute(
-                place_no, current_value, previous_value
+                place_no, current_value, previous_value, initial_places
             )
 
             if attribute is not None:
@@ -284,7 +293,7 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         solutions: defaultdict, rise_places: Dict[str, List[Tuple[int, int]]]
     ) -> defaultdict:
         net_places = defaultdict(
-            lambda: {"edges_in": [], "edges_out": [], "marking": int}
+            lambda: {"edges_in": [], "edges_out": [], "potential_loop": [], "marking": int}
         )
         for solution, token_places in solutions.items():
             for token_place in token_places:
@@ -301,13 +310,26 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
                                     key = "edges_in"
                                 elif token_place["attribute"] == "removed":
                                     key = "edges_out"
-                                #elif token_place["attribute"] == "potential_loop":
-                                    #key = "potential_loop"
-                                if activity not in net_places[solution][key]:
-                                    net_places[solution][key].append(activity)
+                                elif token_place["attribute"] == "potential_loop":
+                                    key = "potential_loop"
+                                if key == "potential_loop":
+                                    net_places[solution][key].append((activity, place_no))
+                                elif activity not in net_places[solution][key]:
+                                    net_places[solution][key].append(activity) 
+                                #if activity not in net_places[solution][key]:
+                                    #net_places[solution][key].append(activity)
                                 #elif key == "potential_loop":
                                     #net_places[solution][key].append(activity)
-
+            # loops prüfen
+            previous_activity, previous_place = None, None
+            for activity, place in sorted(net_places[solution]["potential_loop"], key=lambda x: x[1]):
+                if previous_activity == activity and place == previous_place + 1:
+                    if activity not in net_places[solution]["edges_in"]:
+                        net_places[solution]["edges_in"].append(activity)
+                    if activity not in net_places[solution]["edges_out"]:
+                        net_places[solution]["edges_out"].append(activity)
+                    
+                previous_activity, previous_place = activity, place
         return net_places
 
     def _solve_ilp_problem(
@@ -341,7 +363,7 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         problem.solve()
 
         while problem.status == 1:
-            SynthesisUVCL._update_solutions(place_vars, solutions, solution_no)
+            SynthesisUVCL._update_solutions(place_vars, solutions, solution_no, initial_places)
             SynthesisUVCL._add_new_constraint(problem, solution_no)
             solution_no += 1
             problem.solve()
@@ -506,7 +528,6 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         # Optional: Traces filtern
         filtered_obj = SynthesisUVCL._filter_traces(obj, 0.1)
         filtered_obj = SynthesisUVCL._set_start_and_end(filtered_obj)
-        short_loop_filtered_obj = SynthesisUVCL._filter_short_loops(filtered_obj)
 
         # Token Trails erstellen
         (
@@ -516,10 +537,10 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
             num_places,
             # initial_activities,
             # final_activities,
-        ) = SynthesisUVCL._get_token_trails(short_loop_filtered_obj, parameters)
+        ) = SynthesisUVCL._get_token_trails(filtered_obj, parameters)
 
         # Netz erstellen #TODO wird activities überhaupt benötigt?
-        net, activities, im, fm = SynthesisUVCL._init_net(short_loop_filtered_obj)
+        net, activities, im, fm = SynthesisUVCL._init_net(filtered_obj)
 
         net_places = SynthesisUVCL._solve_ilp_problem(
             token_trails, initial_places, final_places, num_places
@@ -531,21 +552,22 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
 
         vis.view_petri_net(workflow_net, im, fm, format="svg")
 
-        try:
-           pt = convert_to_process_tree(
-            workflow_net,
-            im,
-            fm,
-        ) 
-        except:
-            pt = PlaceholderTree(workflow_net, im, fm)
+        #try:
+           #pt = convert_to_process_tree(
+            #workflow_net,
+            #im,
+            #fm,
+        #) 
+        #except:
+        pt = PlaceholderTree(workflow_net, im, fm)
 
         return pt
     
 
 class PlaceholderTree(ProcessTree):
     def __init__(self, petri_net: PetriNet, im: Marking, fm: Marking):
-        super().__init__(label="synth_placeholder")
+        tree_id = str(uuid.uuid4())
+        super().__init__(label=f"synth_placeholder_{tree_id}")
         self.petri_net = petri_net
         self.im = im
         self.fm = fm

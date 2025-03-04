@@ -13,7 +13,7 @@ from pm4py.objects.conversion.process_tree import converter as process_tree_conv
 
 class IMSFSTest(unittest.TestCase):
     log = "LisaB_Testlogs/bpi2019_c.xes"
-    pnml_net = "LisaB_Testlogs/teleclaims_10.pnml"
+    pnml_net = "LisaB_Testlogs/bpi2019c_10.pnml"
 
     def test_compare_imf(self, log_name=log):
         # to avoid static method warnings in tests,
@@ -38,10 +38,11 @@ class IMSFSTest(unittest.TestCase):
         self.dummy_variable = "dummy_value"
         log = xes_importer.apply(log_name)
         variant = inductive_miner.Variants.IMsfs
-
+        parameters = {}
+        parameters["disable_fallthroughs"] = True
         process_tree = inductive_miner.apply(
             log,
-            variant=variant,
+            variant=variant, parameters=parameters
         )
         #net, initial_marking, final_marking = process_tree_converter.apply(process_tree)
         

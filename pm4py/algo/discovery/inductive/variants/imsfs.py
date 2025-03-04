@@ -90,22 +90,28 @@ class IMSFSUVCL(IMSFS[IMDataStructureUVCL]):
     def convert_process_tree(tree: ProcessTree) -> Tuple[PetriNet, Marking, Marking]:
         net, initial_marking, final_marking = process_tree_converter.apply(tree)
         leaves = pt_utils.get_leaves(tree)
-        synth_net = None
+        synth_nets = {}
         for leave in leaves:
-            if leave.label == "synth_placeholder":
-                synth_net = leave.petri_net
-                synth_im = leave.im
-                break
-        if not synth_net:
+            if leave.label and leave.label.startswith("synth_placeholder_"):
+                placeholder_id = leave.label.split("_")[-1]
+                synth_nets[placeholder_id] = (leave.petri_net, leave.im)
+                
+        if not synth_nets:
             return net, initial_marking, final_marking
 
-        net_placeholder = None
-        for t in net.transitions:
-            if t.label == "synth_placeholder":
-                net_placeholder = t
-                break
+        placeholders = [t for t in net.transitions if t.label and t.label.startswith("synth_placeholder_")]
 
-        # start/stopp des synthesenetzes
+        for placeholder in placeholders:
+            placeholder_id = placeholder.label.split("_")[-1]
+            if placeholder_id in synth_nets:
+                synth_net, synth_im = synth_nets[placeholder_id]
+                net = IMSFSUVCL._replace_placeholder_with_synth_net(net, placeholder, synth_net, synth_im, initial_marking)
+
+        net = petri_utils.remove_unconnected_components(net)
+        vis.view_petri_net(net, initial_marking, final_marking, format="svg")  
+        return net, initial_marking, final_marking   
+
+    def _replace_placeholder_with_synth_net(net:PetriNet, net_placeholder: PetriNet.Transition, synth_net: PetriNet, synth_im: Marking, initial_marking: Marking) -> PetriNet:
         synth_start = None
         synth_stop = None
         for t in synth_net.transitions:
@@ -114,36 +120,44 @@ class IMSFSUVCL(IMSFS[IMDataStructureUVCL]):
             if t.label == "Stop":
                 synth_stop = t
 
-        # plätze und transitionen aus dem synthesenetz einfügen
+        if not synth_start or not synth_stop:
+            return net  # Falls kein gültiges Synthesenetz, breche ab
+
+        # Füge das Synthesenetz in das Hauptnetz ein
         net.transitions.update(synth_net.transitions)
         net.places.update(synth_net.places)
         net.arcs.update(synth_net.arcs)
-        vis.view_petri_net(net, initial_marking, final_marking, format="svg")
 
-        
-        # del synth source / sink
+        vis.view_petri_net(net, initial_marking, Marking(), format="svg")
+
         synth_source_arcs = copy(synth_start.in_arcs)
         synth_sink_arcs = copy(synth_stop.out_arcs)
         for arc in synth_source_arcs:
             place = arc.source
-            del synth_im[place]
+            if place in synth_im:
+                del synth_im[place]
             net = petri_utils.remove_arc(net, arc)
             net = petri_utils.remove_place(net, place)
+
         for arc in synth_sink_arcs:
             place = arc.target
             net = petri_utils.remove_arc(net, arc)
             net = petri_utils.remove_place(net, place)
-        vis.view_petri_net(net, initial_marking, final_marking, format="svg")    
-        
-        IMSFSUVCL._connect_nets(net, net_placeholder, synth_start, synth_stop)
-               
-        # initale Markierung der synthetisierten Plätze übertragen
-        for place in synth_im:
-            initial_marking[place] = synth_im[place]
-        vis.view_petri_net(net, initial_marking, final_marking, format="svg")     
 
-        net = petri_utils.remove_unconnected_components(net)
-        vis.view_petri_net(net, initial_marking, final_marking, format="svg")     
+        vis.view_petri_net(net, initial_marking, Marking(), format="svg")
+
+        net = IMSFSUVCL._connect_nets(net, net_placeholder, synth_start, synth_stop)
+
+        # Übernehme initiale Markierung
+        for place, count in synth_im.items():
+            initial_marking[place] = count
+
+        vis.view_petri_net(net, initial_marking, Marking(), format="svg")
+
+        return net
+
+
+
 
     def _connect_nets(net: PetriNet, net_placeholder: PetriNet.Transition, synth_start: PetriNet.Transition, synth_stop: PetriNet.Transition) -> PetriNet:
         
