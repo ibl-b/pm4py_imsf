@@ -23,6 +23,7 @@ def write_xes(
     case_id_key: str = "case:concept:name",
     extensions=None,
     encoding: str = constants.DEFAULT_ENCODING,
+    variant_str: str = "line_by_line",
     **kwargs
 ) -> None:
     """
@@ -32,6 +33,7 @@ def write_xes(
     :param file_path: Target file path of the event log (``.xes`` file) on disk.
     :param case_id_key: Column key that identifies the case identifier.
     :param extensions: Extensions defined for the event log.
+    :param variant_str: Variant to be used (default: line-by-line, rustxes)
     :param encoding: The encoding to be used (default: utf-8).
 
     .. code-block:: python3
@@ -59,9 +61,14 @@ def write_xes(
     parameters["extensions"] = extensions
     parameters["encoding"] = encoding
 
-    from pm4py.objects.log.exporter.xes import exporter as xes_exporter
-
-    xes_exporter.apply(log, file_path, parameters=parameters)
+    if variant_str == "rustxes":
+        import pm4py, rustxes, polars
+        log = pm4py.convert_to_dataframe(log)
+        log = polars.DataFrame(log)
+        rustxes.export_xes(log, file_path)
+    else:
+        from pm4py.objects.log.exporter.xes import exporter as xes_exporter
+        xes_exporter.apply(log, file_path, variant=xes_exporter.Variants.LINE_BY_LINE, parameters=parameters)
 
 
 def write_pnml(
