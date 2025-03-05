@@ -9,7 +9,7 @@ from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.objects.process_tree.obj import ProcessTree
 from pm4py.utils import __event_log_deprecation_warning
 import pandas as pd
-from typing import Union, Tuple, Dict
+from typing import Union, Tuple, Dict, Optional
 from pm4py.util import constants
 from pm4py.util.pandas_utils import (
     check_is_pandas_dataframe,
@@ -23,7 +23,7 @@ def write_xes(
     case_id_key: str = "case:concept:name",
     extensions=None,
     encoding: str = constants.DEFAULT_ENCODING,
-    variant_str: str = "line_by_line",
+    variant_str: Optional[str] = None,
     **kwargs
 ) -> None:
     """
@@ -61,14 +61,14 @@ def write_xes(
     parameters["extensions"] = extensions
     parameters["encoding"] = encoding
 
-    if variant_str == "rustxes":
+    if variant_str is None or variant_str == "line_by_line":
+        from pm4py.objects.log.exporter.xes import exporter as xes_exporter
+        xes_exporter.apply(log, file_path, variant=xes_exporter.Variants.LINE_BY_LINE, parameters=parameters)
+    else:
         import pm4py, rustxes, polars
         log = pm4py.convert_to_dataframe(log)
         log = polars.DataFrame(log)
         rustxes.export_xes(log, file_path)
-    else:
-        from pm4py.objects.log.exporter.xes import exporter as xes_exporter
-        xes_exporter.apply(log, file_path, variant=xes_exporter.Variants.LINE_BY_LINE, parameters=parameters)
 
 
 def write_pnml(
