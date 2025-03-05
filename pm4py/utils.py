@@ -771,10 +771,10 @@ def __event_log_deprecation_warning(log):
 
 def __rustxes_usage_warning():
     if Shared.RUSTXES_WARNING_SHOWN is False:
-        warnings.warn("In the current version, the import operation uses `rustxes` by default for importing files faster. Please uninstall `rustxes` to revert the behavior.")
+        warnings.warn("In the current version, the import/export operation uses `rustxes` by default for importing/exporting files faster. Please uninstall `rustxes` to revert the behavior.")
         Shared.RUSTXES_WARNING_SHOWN = True
 
 def __rustxes_non_usage_warning():
     if Shared.RUSTXES_WARNING_SHOWN is False:
-        warnings.warn("Install the optional requirement `rustxes` to import files faster.")
+        warnings.warn("Install the optional requirement `rustxes` to import/export files faster.")
         Shared.RUSTXES_WARNING_SHOWN = True
