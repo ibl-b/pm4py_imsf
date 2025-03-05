@@ -417,7 +417,7 @@ def read_ocel2(
         "xmlocel"
     ):
         return read_ocel2_xml(
-            local_path, variant_str=variant_str, encoding=encoding
+            local_path, encoding=encoding
         )
     elif local_path.lower().endswith("json") or local_path.lower().endswith(
         "jsonocel"
