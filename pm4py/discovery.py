@@ -804,14 +804,14 @@ def derive_minimum_self_distance(
 
 
 def discover_footprints(
-    *args: Union[EventLog, Tuple[PetriNet, Marking, Marking], ProcessTree]
+    *args: Union[EventLog, Tuple[PetriNet, Marking, Marking], ProcessTree, POWL]
 ) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
     """
     Discovers the footprints from the provided event log or process model.
 
     Footprints are a high-level representation of the behavior captured in the event log or process model.
 
-    :param args: Event log, process model (Petri net and markings), or ProcessTree.
+    :param args: Event log, process model (Petri net and markings), or ProcessTree, or POWL.
     :return: A list of footprint dictionaries or a single footprint dictionary.
     :rtype: ``Union[List[Dict[str, Any]], Dict[str, Any]]``
 

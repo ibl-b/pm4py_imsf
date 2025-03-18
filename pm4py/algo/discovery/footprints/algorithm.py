@@ -6,6 +6,7 @@ from pm4py.algo.discovery.footprints.log.variants import (
 from pm4py.algo.discovery.footprints.petri.variants import reach_graph
 from pm4py.algo.discovery.footprints.dfg.variants import dfg
 from pm4py.algo.discovery.footprints.tree.variants import bottomup
+from pm4py.algo.discovery.footprints.powl.variants import bottomup as bottomup_powl
 from pm4py.objects.log.obj import EventLog
 from pm4py.objects.petri_net.obj import PetriNet
 from pm4py.objects.process_tree.obj import ProcessTree
@@ -21,6 +22,7 @@ class Variants(Enum):
     TRACE_BY_TRACE = trace_by_trace
     PETRI_REACH_GRAPH = reach_graph
     PROCESS_TREE = bottomup
+    POWL = bottomup_powl
     DFG = dfg
 
 
@@ -48,11 +50,15 @@ def apply(
     footprints_obj
         Footprints object
     """
+    from pm4py.objects.powl.obj import POWL, StrictPartialOrder, OperatorPOWL
+
     if variant is None:
         if type(args[0]) is EventLog:
             variant = Variants.TRACE_BY_TRACE
         elif type(args[0]) is PetriNet:
             variant = Variants.PETRI_REACH_GRAPH
+        elif isinstance(args[0], POWL):
+            variant = Variants.POWL
         elif type(args[0]) is ProcessTree:
             variant = Variants.PROCESS_TREE
         elif isinstance(args[0], dict):
@@ -69,6 +75,7 @@ def apply(
         Variants.ENTIRE_EVENT_LOG,
         Variants.DFG,
         Variants.PROCESS_TREE,
+        Variants.POWL,
         Variants.ENTIRE_DATAFRAME,
     ]:
         return exec_utils.get_variant(variant).apply(
