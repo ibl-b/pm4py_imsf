@@ -1,4 +1,8 @@
-from pm4py.algo.discovery.footprints.log.variants import entire_event_log, trace_by_trace, entire_dataframe
+from pm4py.algo.discovery.footprints.log.variants import (
+    entire_event_log,
+    trace_by_trace,
+    entire_dataframe,
+)
 from pm4py.algo.discovery.footprints.petri.variants import reach_graph
 from pm4py.algo.discovery.footprints.dfg.variants import dfg
 from pm4py.algo.discovery.footprints.tree.variants import bottomup
@@ -20,7 +24,9 @@ class Variants(Enum):
     DFG = dfg
 
 
-def apply(*args, variant=None, parameters: Optional[Dict[Any, Any]] = None) -> Dict[str, Any]:
+def apply(
+    *args, variant=None, parameters: Optional[Dict[Any, Any]] = None
+) -> Dict[str, Any]:
     """
     Discovers a footprint object from a log/model
 
@@ -58,8 +64,17 @@ def apply(*args, variant=None, parameters: Optional[Dict[Any, Any]] = None) -> D
         if variant is None:
             return Exception("unsupported arguments")
 
-    if variant in [Variants.TRACE_BY_TRACE, Variants.ENTIRE_EVENT_LOG, Variants.DFG, Variants.PROCESS_TREE,
-                   Variants.ENTIRE_DATAFRAME]:
-        return exec_utils.get_variant(variant).apply(args[0], parameters=parameters)
+    if variant in [
+        Variants.TRACE_BY_TRACE,
+        Variants.ENTIRE_EVENT_LOG,
+        Variants.DFG,
+        Variants.PROCESS_TREE,
+        Variants.ENTIRE_DATAFRAME,
+    ]:
+        return exec_utils.get_variant(variant).apply(
+            args[0], parameters=parameters
+        )
     elif variant in [Variants.PETRI_REACH_GRAPH]:
-        return exec_utils.get_variant(variant).apply(args[0], args[1], parameters=parameters)
+        return exec_utils.get_variant(variant).apply(
+            args[0], args[1], parameters=parameters
+        )
