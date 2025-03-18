@@ -231,6 +231,7 @@ from pm4py.convert import (
     convert_log_to_time_intervals,
     convert_petri_net_to_networkx,
     convert_petri_net_type,
+    convert_to_powl,
 )
 from pm4py.analysis import (
     cluster_log,

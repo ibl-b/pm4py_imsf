@@ -7,6 +7,7 @@ from typing import Union, Tuple, Optional, Collection, List, Any, Dict
 import pandas as pd
 from copy import deepcopy
 
+import pm4py
 from pm4py.objects.bpmn.obj import BPMN
 from pm4py.objects.ocel.obj import OCEL
 from pm4py.objects.powl.obj import POWL
@@ -290,6 +291,47 @@ def convert_to_process_tree(
 
     raise Exception(
         "The object represents a model that cannot be represented as a process tree!"
+    )
+
+
+def convert_to_powl(*args: Union[Tuple[PetriNet, Marking, Marking], BPMN, ProcessTree]) -> POWL:
+    """
+    Converts an input model to a POWL model.
+
+    The input models can be Petri nets (with markings) or BPMN models or process trees.
+    For both input types, the conversion is not guaranteed to work and may raise an exception.
+
+    :param args:
+        - If converting from a Petri net: a tuple of (``PetriNet``, ``Marking``, ``Marking``).
+        - If converting from a BPMN or ProcessTree: a single object of the respective type.
+    :return: A ``ProcessTree`` object.
+
+    .. code-block:: python3
+
+       import pm4py
+
+       # Imports a BPMN file
+       bpmn_graph = pm4py.read_bpmn("tests/input_data/running-example.bpmn")
+       # Converts the BPMN to a POWL (through intermediate conversion to a Petri net)
+       powl = pm4py.convert_to_powl(bpmn_graph)
+       print(powl)
+    """
+    from pm4py.objects.process_tree.obj import ProcessTree
+    from pm4py.objects.petri_net.obj import PetriNet
+
+    if isinstance(args[0], ProcessTree):
+        from pm4py.objects.conversion.process_tree.variants import to_powl
+        return to_powl.apply(args[0])
+    elif isinstance(args[0], PetriNet):
+        from pm4py.objects.conversion.wf_net.variants import to_powl
+        return to_powl.apply(args[0])
+    elif isinstance(args[0], BPMN):
+        from pm4py.objects.conversion.wf_net.variants import to_powl
+        net, im, fm = pm4py.convert_to_petri_net(args[0])
+        return to_powl.apply(net)
+
+    raise Exception(
+        "The object represents a model that cannot be directly represented as a POWL!"
     )
 
 
