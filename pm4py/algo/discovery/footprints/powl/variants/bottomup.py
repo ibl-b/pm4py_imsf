@@ -360,23 +360,53 @@ def get_footprints_of_partial_order(
 ) -> Dict[str, Any]:
     """
     Footprints for a StrictPartialOrder node:
-      1) Apply transitive reduction to the partial order
-      2) Compute each child's footprints
-      3) Merge them in a parallel/AND sense
-      4) Refine start_activities/end_activities using non-skippable predecessors/successors
-      5) For each edge c->d, link end_activities(c) -> start_activities(d)
-      6) If an intermediate node is skippable, skip it and link c->d as well
-      7) For pairs of children not reachable from each other, add parallel edges among their activities
-      8) min_trace_length = sum of min_trace_length of non-skippable children
+      1) Build the "original" adjacency from the partial order (before transitive reduction).
+      2) Compute the transitive closure (for concurrency detection + skip logic).
+      3) Apply transitive reduction to the partial order to store it minimally.
+      4) Compute each child's footprints, merge them (AND/parallel).
+      5) Refine start_activities/end_activities (non-skippable logic).
+      6) Build the "direct" sequence edges from c->d if c->d in partial order (after reduction).
+      7) Add "skip" edges c->d only if on *every path* from c to d all intermediate nodes are skippable
+         (i.e., no non-skippable node n with c->n->...->d).
+      8) Detect concurrency (parallel edges) using closure: c,d are concurrent if neither c->d nor d->c.
+      9) fix_fp(...) and set min_trace_length.
     """
-    # 1) transitive reduction
+    from collections import defaultdict, deque
+
+    #####################
+    # 1) Build original adjacency (direct edges) from partial order
+    #####################
+    children = node.children
+    original_adjacency = {c: [] for c in children}
+    for c in children:
+        for d in children:
+            if node.partial_order.is_edge(c, d):
+                original_adjacency[c].append(d)
+
+    #####################
+    # 2) Compute transitive closure from original adjacency
+    #####################
+    closure = {c: set() for c in children}
+    for c in children:
+        visited = set([c])
+        queue = deque([c])
+        while queue:
+            cur = queue.popleft()
+            for nxt in original_adjacency[cur]:
+                if nxt not in visited:
+                    visited.add(nxt)
+                    queue.append(nxt)
+        closure[c] = visited  # includes c itself
+
+    #####################
+    # 3) Apply transitive reduction (makes partial_order minimal)
+    #####################
     transitive_reduction(node)
 
-    # 2) footprints of each child
-    children = node.children
+    #####################
+    # 4) Compute footprints for each child
+    #####################
     child_fps = [get_footprints_powl(c, footprints_cache) for c in children]
-
-    # 3) overall "merged" footprint
     merged_fp = merge_footprints(child_fps)
     sequence = set(merged_fp[SEQUENCE])
     parallel = set(merged_fp[PARALLEL])
@@ -385,9 +415,12 @@ def get_footprints_of_partial_order(
 
     child_index = {c: i for i, c in enumerate(children)}
 
-    # 4) refine START (no non-skippable predecessor)
+    #####################
+    # 5) Refine START/END
+    #####################
     for i, c in enumerate(children):
-        fp_i = child_fps[i]
+        fp_c = child_fps[i]
+        # START if no non-skippable predecessor
         has_non_skippable_predecessor = False
         for p in children:
             if node.partial_order.is_edge(p, c):
@@ -396,11 +429,11 @@ def get_footprints_of_partial_order(
                     has_non_skippable_predecessor = True
                     break
         if not has_non_skippable_predecessor:
-            start_activities |= fp_i[START_ACTIVITIES]
+            start_activities |= fp_c[START_ACTIVITIES]
 
-    # 4) refine END (no non-skippable successor)
     for i, c in enumerate(children):
-        fp_i = child_fps[i]
+        fp_c = child_fps[i]
+        # END if no non-skippable successor
         has_non_skippable_successor = False
         for s in children:
             if node.partial_order.is_edge(c, s):
@@ -409,97 +442,84 @@ def get_footprints_of_partial_order(
                     has_non_skippable_successor = True
                     break
         if not has_non_skippable_successor:
-            end_activities |= fp_i[END_ACTIVITIES]
+            end_activities |= fp_c[END_ACTIVITIES]
 
-    # Build adjacency from partial order
-    from collections import defaultdict, deque
-    adjacency = defaultdict(list)
+    #####################
+    # 6) Direct edges from c->d in partial_order (after reduction)
+    #####################
+    reduced_adjacency = defaultdict(list)
     for c in children:
         for d in children:
             if node.partial_order.is_edge(c, d):
-                adjacency[c].append(d)
+                reduced_adjacency[c].append(d)
+                # link footprints
+                fp_c = child_fps[child_index[c]]
+                fp_d = child_fps[child_index[d]]
+                for a1 in fp_c[END_ACTIVITIES]:
+                    for a2 in fp_d[START_ACTIVITIES]:
+                        sequence.add((a1, a2))
 
-    # 5) add direct edges c->d for partial order edges
-    for c in children:
-        fp_c = child_fps[child_index[c]]
-        for d in adjacency[c]:
-            fp_d = child_fps[child_index[d]]
-            for a1 in fp_c[END_ACTIVITIES]:
-                for a2 in fp_d[START_ACTIVITIES]:
-                    sequence.add((a1, a2))
+    #####################
+    # 7) "Skip" edges c->d only if:
+    #    (a) d in closure[c] (meaning c can eventually reach d),
+    #    (b) there is NO non-skippable n s.t. c->n->...->d in closure
+    #####################
+    def all_paths_through_only_skippable(c, d):
+        # If d not reachable from c at all, no skip link
+        if d not in closure[c]:
+            return False
 
-    # 6) skipping skippable children:
-    #    if c-> s-> ... -> d with s,... skippable, then c-> d in footprints
-    def skip_successors(c):
-        """Returns all non-skippable children reachable by traversing only skippable nodes."""
-        visited = set()
-        result = set()
-        queue = deque(adjacency[c])  # immediate successors of c
-        while queue:
-            current = queue.popleft()
-            if current not in visited:
-                visited.add(current)
-                fp_cur = child_fps[child_index[current]]
-                if fp_cur[SKIPPABLE]:
-                    # keep searching deeper
-                    for nxt in adjacency[current]:
-                        if nxt not in visited:
-                            queue.append(nxt)
-                else:
-                    # found a non-skippable node => can link c->current
-                    result.add(current)
-        return result
+        # We must ensure there's NO non-skippable node n != c,d
+        # with c->n and d-> in closure[n]. If that node n is not skippable,
+        # it means any path from c to d that includes n cannot be skipped.
+        # If c->n->...->d is possible, n must be included => can't skip
+        for n in children:
+            if n != c and n != d:
+                if not child_fps[child_index[n]][SKIPPABLE]:
+                    # n is non-skippable; check if c->n->...->d
+                    if (n in closure[c]) and (d in closure[n]):
+                        return False
+        return True
 
     for c in children:
         fp_c = child_fps[child_index[c]]
-        # find all non-skippable successors by skipping skippable intermediates
-        possible_successors = skip_successors(c)
-        for d in possible_successors:
-            fp_d = child_fps[child_index[d]]
-            # link c's end activities to d's start activities
-            for a1 in fp_c[END_ACTIVITIES]:
-                for a2 in fp_d[START_ACTIVITIES]:
-                    sequence.add((a1, a2))
+        for d in children:
+            if c != d:
+                if all_paths_through_only_skippable(c, d):
+                    # add edges from c.end_activities to d.start_activities
+                    fp_d = child_fps[child_index[d]]
+                    for a1 in fp_c[END_ACTIVITIES]:
+                        for a2 in fp_d[START_ACTIVITIES]:
+                            sequence.add((a1, a2))
 
-    # 7) concurrency: pairs c, d not reachable from one another => parallel
-    def is_reachable(start, end):
-        if start == end:
-            return True
-        visited = set()
-        queue = deque([start])
-        while queue:
-            cur = queue.popleft()
-            if cur == end and cur != start:
-                return True
-            for nxt in adjacency[cur]:
-                if nxt not in visited:
-                    visited.add(nxt)
-                    queue.append(nxt)
-        return False
-
+    #####################
+    # 8) Concurrency detection
+    #    c,d concurrent if c->...->d not in closure and d->...->c not in closure
+    #####################
     for i in range(len(children)):
         for j in range(i + 1, len(children)):
             c = children[i]
             d = children[j]
-            if not is_reachable(c, d) and not is_reachable(d, c):
-                # concurrency => add parallel edges among all their activities
+            # if c not in closure[d] and d not in closure[c], they are concurrent
+            if (d not in closure[c]) and (c not in closure[d]):
                 for a1 in child_fps[i][ACTIVITIES]:
                     for a2 in child_fps[j][ACTIVITIES]:
                         parallel.add((a1, a2))
                         parallel.add((a2, a1))
 
-    # fix footprints
+    #####################
+    # 9) fix_fp(...) and finalize
+    #####################
     sequence, parallel = fix_fp(sequence, parallel)
 
     merged_fp[SEQUENCE] = sequence
     merged_fp[PARALLEL] = parallel
     merged_fp[START_ACTIVITIES] = start_activities
     merged_fp[END_ACTIVITIES] = end_activities
-
-    # 8) min_trace_length = sum of non-skippable children
     merged_fp[Outputs.MIN_TRACE_LENGTH.value] = combine_min_trace_length_par(child_fps)
 
     return merged_fp
+
 
 
 
