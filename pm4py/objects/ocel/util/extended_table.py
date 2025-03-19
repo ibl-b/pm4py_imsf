@@ -129,7 +129,7 @@ def get_ocel_from_extended_table(
     # Sort by timestamp and index
     events_df = events_df.sort_values([event_timestamp, internal_index])
 
-    # Prepare data structures for relations
+    # Prepare global data structures for relations
     ev_ids = []
     ev_activities = []
     ev_timestamps = []
@@ -137,7 +137,7 @@ def get_ocel_from_extended_table(
     obj_types = []
 
     # Track unique objects if needed
-    unique_objects = {ot: list() for ot in object_type_columns} if objects_df is None else None
+    unique_objects = {ot: set() for ot in object_type_columns} if objects_df is None else None
 
     # Initialize progress bar
     progress = _construct_progress_bar(len(df))
@@ -159,6 +159,14 @@ def get_ocel_from_extended_table(
         # Convert small chunk to records for faster processing
         chunk_records = chunk.to_dict('records')
 
+        # Create chunk-specific temporary lists
+        chunk_ev_ids = []
+        chunk_ev_activities = []
+        chunk_ev_timestamps = []
+        chunk_obj_ids = []
+        chunk_obj_types = []
+        chunk_unique_objects = {ot: list() for ot in object_type_columns} if objects_df is None else None
+
         # Process records in the current chunk
         for record in chunk_records:
             for ot in object_type_columns:
@@ -166,30 +174,38 @@ def get_ocel_from_extended_table(
                 if obj_list:
                     ot_striped = object_type_mapping[ot]
 
-                    # Update unique objects if tracking
-                    if unique_objects is not None:
-                        unique_objects[ot].extend(obj_list)
+                    # Update unique objects for this chunk if tracking
+                    if chunk_unique_objects is not None:
+                        chunk_unique_objects[ot].extend(obj_list)
 
-                    # Extend relation data efficiently
+                    # Extend chunk-specific data efficiently
                     n_objs = len(obj_list)
-                    ev_ids.extend([record[event_id]] * n_objs)
-                    ev_activities.extend([record[event_activity]] * n_objs)
-                    ev_timestamps.extend([record[event_timestamp]] * n_objs)
-                    obj_ids.extend(obj_list)
-                    obj_types.extend([ot_striped] * n_objs)
+                    chunk_ev_ids.extend([record[event_id]] * n_objs)
+                    chunk_ev_activities.extend([record[event_activity]] * n_objs)
+                    chunk_ev_timestamps.extend([record[event_timestamp]] * n_objs)
+                    chunk_obj_ids.extend(obj_list)
+                    chunk_obj_types.extend([ot_striped] * n_objs)
 
             # Update progress (1 item at a time)
             if progress is not None:
                 progress.update(1)
 
-        for ot in unique_objects:
-            unique_objects[ot] = list(set(unique_objects[ot]))
+        # Merge chunk data with global data
+        ev_ids.extend(chunk_ev_ids)
+        ev_activities.extend(chunk_ev_activities)
+        ev_timestamps.extend(chunk_ev_timestamps)
+        obj_ids.extend(chunk_obj_ids)
+        obj_types.extend(chunk_obj_types)
+
+        # Merge unique objects if tracking
+        if unique_objects is not None:
+            for ot in object_type_columns:
+                unique_objects[ot].update(set(chunk_unique_objects[ot]))
 
         # Free memory
-        del chunk_records
-
-    for ot in unique_objects:
-        unique_objects[ot] = set(unique_objects[ot])
+        del chunk_records, chunk_ev_ids, chunk_ev_activities, chunk_ev_timestamps, chunk_obj_ids, chunk_obj_types
+        if chunk_unique_objects is not None:
+            del chunk_unique_objects
 
     # Clean up progress bar
     _destroy_progress_bar(progress)
