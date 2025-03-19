@@ -287,8 +287,6 @@ def get_ocel_from_extended_table(
         # Free memory
         del obj_types_list, obj_ids_list, unique_objects
 
-    relations.info()
-
     # Create and return OCEL object
     return OCEL(
         events=events_df,
