@@ -120,15 +120,15 @@ def get_ocel_from_extended_table(
     object_type_mapping = {ot: ot.split(object_type_prefix)[1] for ot in object_type_columns}
 
     # Create events DataFrame (only non-object columns)
-    events_df = df[non_object_type_columns].copy()
+    events_df = df[non_object_type_columns]
+
+    #print(events_df)
 
     # Add internal index for sorting events
-    events_df = pandas_utils.insert_index(
-        events_df, internal_index, copy_dataframe=False, reset_index=False
-    )
+    events_df[internal_index] = events_df.index
 
     # Sort by timestamp and index
-    events_df = events_df.sort_values([event_timestamp, internal_index])
+    events_df.sort_values([event_timestamp, internal_index], inplace=True)
 
     # Track unique objects if needed
     unique_objects = {ot: set() for ot in object_type_columns} if objects_df is None else None
@@ -219,13 +219,10 @@ def get_ocel_from_extended_table(
         # Free memory
         del partial_relations_dfs
 
-        # Add internal index for sorting
-        relations = pandas_utils.insert_index(
-            relations, internal_index, reset_index=False, copy_dataframe=False
-        )
+        relations[internal_index] = relations.index
 
         # Sort by timestamp and index
-        relations = relations.sort_values([event_timestamp, internal_index])
+        relations.sort_values([event_timestamp, internal_index], inplace=True)
 
         # Remove temporary index column
         del relations[internal_index]
@@ -234,6 +231,8 @@ def get_ocel_from_extended_table(
         relations = pd.DataFrame(columns=[
             event_id, event_activity, event_timestamp, object_id_column, object_type_column
         ])
+
+    #print(relations)
 
     # Remove temporary index column from events
     del events_df[internal_index]
@@ -258,6 +257,8 @@ def get_ocel_from_extended_table(
 
         # Free memory
         del obj_types_list, obj_ids_list, unique_objects
+
+    #print(objects_df)
 
     # Create and return OCEL object
     return OCEL(
