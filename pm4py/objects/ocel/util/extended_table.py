@@ -59,8 +59,9 @@ def safe_parse_list(value):
 
 def get_ocel_from_extended_table(
         df: pd.DataFrame,
-        objects_df: Optional[Dict[Any, Any]] = None,
+        objects_df: Optional[pd.DataFrame] = None,
         parameters: Optional[Dict[Any, Any]] = None,
+        chunk_size: int = 50000,  # Default chunk size
 ) -> OCEL:
     """
     Get an OCEL object from an extended table format.
@@ -103,122 +104,148 @@ def get_ocel_from_extended_table(
         Parameters.INTERNAL_INDEX, parameters, constants.DEFAULT_INTERNAL_INDEX
     )
 
+    # Parse timestamp column upfront in the original DataFrame
+    df = dataframe_utils.convert_timestamp_columns_in_df(
+        df,
+        timest_format=pm4_constants.DEFAULT_TIMESTAMP_PARSE_FORMAT,
+        timest_columns=[event_timestamp],
+    )
+
     # Identify columns efficiently
     object_type_columns = [col for col in df.columns if col.startswith(object_type_prefix)]
     non_object_type_columns = [col for col in df.columns if not col.startswith(object_type_prefix)]
 
-    # Pre-compute object type mappings (do this once outside the loop)
+    # Pre-compute object type mappings
     object_type_mapping = {ot: ot.split(object_type_prefix)[1] for ot in object_type_columns}
 
-    # Use lists for relation data (more memory efficient than constantly growing dicts)
+    # Create events DataFrame (only non-object columns)
+    events_df = df[non_object_type_columns].copy()
+
+    # Add internal index for sorting events
+    events_df = pandas_utils.insert_index(
+        events_df, internal_index, copy_dataframe=False, reset_index=False
+    )
+
+    # Sort by timestamp and index
+    events_df = events_df.sort_values([event_timestamp, internal_index])
+
+    # Prepare data structures for relations
     ev_ids = []
     ev_activities = []
     ev_timestamps = []
     obj_ids = []
     obj_types = []
 
-    # Prepare sets for tracking unique objects
-    objects_set = {ot: set() for ot in object_type_columns}
+    # Track unique objects if needed
+    unique_objects = {ot: list() for ot in object_type_columns} if objects_df is None else None
 
-    # Select only necessary columns for processing
-    required_columns = [event_id, event_activity, event_timestamp] + object_type_columns
-
+    # Initialize progress bar
     progress = _construct_progress_bar(len(df))
 
-    # Process rows efficiently
-    for _, row in df[required_columns].iterrows():
-        ev_id = row[event_id]
-        ev_activity = row[event_activity]
-        ev_timestamp = row[event_timestamp]
+    # Create a filtered DataFrame with only needed columns
+    needed_columns = [event_id, event_activity, event_timestamp] + object_type_columns
+    filtered_df = df[needed_columns]
 
-        for ot in object_type_columns:
-            # Parse the list of objects safely
-            obj_list = safe_parse_list(row[ot])
-            ot_striped = object_type_mapping[ot]
+    # Process DataFrame in chunks to avoid memory issues
+    # Use the chunk_size parameter from function arguments
+    total_rows = len(filtered_df)
 
-            # Update the set of unique objects
-            objects_set[ot].update(obj_list)
+    for chunk_start in range(0, total_rows, chunk_size):
+        chunk_end = min(chunk_start + chunk_size, total_rows)
 
-            # Add relation data
-            for obj in obj_list:
-                ev_ids.append(ev_id)
-                ev_activities.append(ev_activity)
-                ev_timestamps.append(ev_timestamp)
-                obj_ids.append(obj)
-                obj_types.append(ot_striped)
+        # Extract a chunk
+        chunk = filtered_df.iloc[chunk_start:chunk_end]
 
-        if progress is not None:
-            progress.update()
+        # Convert small chunk to records for faster processing
+        chunk_records = chunk.to_dict('records')
 
+        # Process records in the current chunk
+        for record in chunk_records:
+            for ot in object_type_columns:
+                obj_list = safe_parse_list(record[ot])
+                if obj_list:
+                    ot_striped = object_type_mapping[ot]
+
+                    # Update unique objects if tracking
+                    if unique_objects is not None:
+                        unique_objects[ot].extend(obj_list)
+
+                    # Extend relation data efficiently
+                    n_objs = len(obj_list)
+                    ev_ids.extend([record[event_id]] * n_objs)
+                    ev_activities.extend([record[event_activity]] * n_objs)
+                    ev_timestamps.extend([record[event_timestamp]] * n_objs)
+                    obj_ids.extend(obj_list)
+                    obj_types.extend([ot_striped] * n_objs)
+
+            # Update progress (1 item at a time)
+            if progress is not None:
+                progress.update(1)
+
+        for ot in unique_objects:
+            unique_objects[ot] = list(set(unique_objects[ot]))
+
+        # Free memory
+        del chunk_records
+
+    for ot in unique_objects:
+        unique_objects[ot] = set(unique_objects[ot])
+
+    # Clean up progress bar
     _destroy_progress_bar(progress)
 
-    # Create relations DataFrame in one go (more efficient than incremental building)
-    relations = pd.DataFrame({
-        event_id: ev_ids,
-        event_activity: ev_activities,
-        event_timestamp: ev_timestamps,
-        object_id_column: obj_ids,
-        object_type_column: obj_types
-    })
+    # Create relations DataFrame in one go
+    if ev_ids:
+        relations = pd.DataFrame({
+            event_id: ev_ids,
+            event_activity: ev_activities,
+            event_timestamp: ev_timestamps,
+            object_id_column: obj_ids,
+            object_type_column: obj_types
+        })
+
+        # Add internal index for sorting
+        relations = pandas_utils.insert_index(
+            relations, internal_index, reset_index=False, copy_dataframe=False
+        )
+
+        # Sort by timestamp and index
+        relations = relations.sort_values([event_timestamp, internal_index])
+
+        # Remove temporary index column
+        del relations[internal_index]
+    else:
+        # Create empty DataFrame with correct columns
+        relations = pd.DataFrame(columns=[
+            event_id, event_activity, event_timestamp, object_id_column, object_type_column
+        ])
+
+    # Remove temporary index column from events
+    del events_df[internal_index]
 
     # Free memory
     del ev_ids, ev_activities, ev_timestamps, obj_ids, obj_types
 
     # Create objects DataFrame if not provided
     if objects_df is None:
-        obj_type_list = []
-        obj_id_list = []
+        obj_types_list = []
+        obj_ids_list = []
 
         for ot in object_type_columns:
             ot_striped = object_type_mapping[ot]
-            ot_objects = list(objects_set[ot])
+            obj_ids = list(unique_objects[ot])
 
-            # More efficient than multiple appends
-            obj_type_list.extend([ot_striped] * len(ot_objects))
-            obj_id_list.extend(ot_objects)
+            if obj_ids:
+                obj_types_list.extend([ot_striped] * len(obj_ids))
+                obj_ids_list.extend(obj_ids)
 
         objects_df = pd.DataFrame({
-            object_type_column: obj_type_list,
-            object_id_column: obj_id_list
+            object_type_column: obj_types_list,
+            object_id_column: obj_ids_list
         })
 
         # Free memory
-        del obj_type_list, obj_id_list
-
-    # Free memory
-    del objects_set
-
-    # Process the events DataFrame (only non-object columns)
-    events_df = df[non_object_type_columns].copy()
-
-    # Convert timestamp columns
-    events_df = dataframe_utils.convert_timestamp_columns_in_df(
-        events_df,
-        timest_format=pm4_constants.DEFAULT_TIMESTAMP_PARSE_FORMAT,
-        timest_columns=[event_timestamp],
-    )
-
-    relations = dataframe_utils.convert_timestamp_columns_in_df(
-        relations,
-        timest_format=pm4_constants.DEFAULT_TIMESTAMP_PARSE_FORMAT,
-        timest_columns=[event_timestamp],
-    )
-
-    # Add internal index for sorting
-    events_df = pandas_utils.insert_index(
-        events_df, internal_index, copy_dataframe=False, reset_index=False
-    )
-    relations = pandas_utils.insert_index(
-        relations, internal_index, reset_index=False, copy_dataframe=False
-    )
-
-    # Sort by timestamp and index
-    events_df = events_df.sort_values([event_timestamp, internal_index])
-    relations = relations.sort_values([event_timestamp, internal_index])
-
-    # Remove temporary index columns
-    del events_df[internal_index]
-    del relations[internal_index]
+        del obj_types_list, obj_ids_list, unique_objects
 
     # Create and return OCEL object
     return OCEL(
