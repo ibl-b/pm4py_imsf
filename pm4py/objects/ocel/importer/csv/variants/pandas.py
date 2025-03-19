@@ -39,7 +39,7 @@ def apply(file_path: str, objects_path: str = None, parameters: Optional[Dict[An
 
     objects = None
     if objects_path is not None:
-        objects = pandas_utils.read_csv(objects_path, index_col=False, encoding=encoding, dtype=str)
+        objects = pandas_utils.read_csv(objects_path, index_col=False, encoding=encoding)
 
     ocel = extended_table.get_ocel_from_extended_table(table, objects, parameters=parameters)
     ocel = ocel_consistency.apply(ocel, parameters=parameters)
