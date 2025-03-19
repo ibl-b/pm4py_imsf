@@ -7,7 +7,8 @@ from pm4py.objects.log import obj as log_instance
 from pm4py.objects.log.obj import EventLog, Event, XESExtension
 from pm4py.util import constants as pmutil
 from pm4py.util import exec_utils, pandas_utils, xes_constants
-import pandas as pd
+import pandas
+import math
 
 
 class Parameters(Enum):
@@ -34,21 +35,19 @@ def __postprocess_stream(list_events):
     list_events
         Postprocessed stream
     """
-    import pandas
+    NaTType = pandas._libs.tslibs.nattype.NaTType
 
     for event in list_events:
-        event_keys = list(event.keys())
-        for k in event_keys:
-            typ_k = type(event[k])
-            if typ_k is pandas._libs.tslibs.nattype.NaTType:
-                del event[k]
-                continue
-            elif (typ_k is float or typ_k is int) and math.isnan(event[k]):
-                del event[k]
-                continue
-            elif event[k] is None:
-                del event[k]
-                continue
+        keys_to_delete = [
+            k for k, v in event.items()
+            if type(v) is NaTType or
+               ((type(v) is float or type(v) is int) and math.isnan(v)) or
+               v is None
+        ]
+
+        for k in keys_to_delete:
+            del event[k]
+
     return list_events
 
 
