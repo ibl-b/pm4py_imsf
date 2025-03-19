@@ -106,11 +106,7 @@ def get_ocel_from_extended_table(
     )
 
     # Parse timestamp column upfront in the original DataFrame
-    df = dataframe_utils.convert_timestamp_columns_in_df(
-        df,
-        timest_format=pm4_constants.DEFAULT_TIMESTAMP_PARSE_FORMAT,
-        timest_columns=[event_timestamp],
-    )
+    df[event_timestamp] = pd.to_datetime(df[event_timestamp], format=pm4_constants.DEFAULT_TIMESTAMP_PARSE_FORMAT)
 
     # Identify columns efficiently
     object_type_columns = [col for col in df.columns if col.startswith(object_type_prefix)]
@@ -139,15 +135,11 @@ def get_ocel_from_extended_table(
     filtered_df = df[needed_columns]
 
     # ----------------------------------------------------------
-    # Import PyArrow for memory-efficient array handling
-    import pyarrow as pa
-
-    # Initialize empty PyArrow arrays for each column
-    global_ev_ids = pa.array([], type=pa.large_string())
-    global_ev_activities = pa.array([], type=pa.large_string())
-    global_ev_timestamps = pa.array([], type=pa.timestamp('ns'))
-    global_obj_ids = pa.array([], type=pa.large_string())
-    global_obj_types = pa.array([], type=pa.large_string())
+    global_ev_ids = []
+    global_ev_activities = []
+    global_ev_timestamps = []
+    global_obj_ids = []
+    global_obj_types = []
     # ----------------------------------------------------------
 
     # Process DataFrame in chunks to avoid memory issues
@@ -195,38 +187,20 @@ def get_ocel_from_extended_table(
 
         del chunk_records
 
-        # Append chunk data to global PyArrow arrays
+        # Append chunk data to global lists
         if chunk_ev_ids:
-            # Convert chunk lists to PyArrow arrays
-            chunk_ev_ids_pa = pa.array(chunk_ev_ids, type=pa.large_string())
-            del chunk_ev_ids
-            chunk_ev_activities_pa = pa.array(chunk_ev_activities, type=pa.large_string())
-            del chunk_ev_activities
-            chunk_ev_timestamps_pa = pa.array(chunk_ev_timestamps, type=pa.timestamp('ns'))
-            del chunk_ev_timestamps
-            chunk_obj_ids_pa = pa.array(chunk_obj_ids, type=pa.large_string())
-            del chunk_obj_ids
-            chunk_obj_types_pa = pa.array(chunk_obj_types, type=pa.large_string())
-            del chunk_obj_types
-
-            # Concatenate with existing arrays using pa.concat_arrays instead of pa.concat
-            global_ev_ids = pa.concat_arrays([global_ev_ids, chunk_ev_ids_pa])
-            del chunk_ev_ids_pa
-            global_ev_activities = pa.concat_arrays([global_ev_activities, chunk_ev_activities_pa])
-            del chunk_ev_activities_pa
-            global_ev_timestamps = pa.concat_arrays([global_ev_timestamps, chunk_ev_timestamps_pa])
-            del chunk_ev_timestamps_pa
-            global_obj_ids = pa.concat_arrays([global_obj_ids, chunk_obj_ids_pa])
-            del chunk_obj_ids_pa
-            global_obj_types = pa.concat_arrays([global_obj_types, chunk_obj_types_pa])
-            del chunk_obj_types_pa
+            global_ev_ids.extend(chunk_ev_ids)
+            global_ev_activities.extend(chunk_ev_activities)
+            global_ev_timestamps.extend(chunk_ev_timestamps)
+            global_obj_ids.extend(chunk_obj_ids)
+            global_obj_types.extend(chunk_obj_types)
 
         # Merge unique objects if tracking
         if unique_objects is not None:
             for ot in object_type_columns:
                 unique_objects[ot].update(set(chunk_unique_objects[ot]))
 
-        # Free memory
+        # Free memory for chunk-specific unique objects
         if chunk_unique_objects is not None:
             del chunk_unique_objects
 
@@ -236,19 +210,13 @@ def get_ocel_from_extended_table(
     # Create the relations DataFrame only once at the end
     relations = pd.DataFrame()
     if len(global_ev_ids) > 0:
-        # Create dataframe directly from PyArrow arrays
-        global_ev_ids = global_ev_ids.to_pandas()
-        global_ev_activities = global_ev_activities.to_pandas()
-        global_ev_timestamps = global_ev_timestamps.to_pandas()
-        global_obj_ids = global_obj_ids.to_pandas()
-        global_obj_types = global_obj_types.to_pandas()
-
+        # Create dataframe directly from the global lists, converting to Pandas Series with appropriate dtypes
         relations = pd.DataFrame({
-            event_id: global_ev_ids,
-            event_activity: global_ev_activities,
-            event_timestamp: global_ev_timestamps,
-            object_id_column: global_obj_ids,
-            object_type_column: global_obj_types
+            event_id: pd.Series(global_ev_ids, dtype="string"),
+            event_activity: pd.Series(global_ev_activities, dtype="string"),
+            event_timestamp: pd.to_datetime(pd.Series(global_ev_timestamps), errors='coerce'),
+            object_id_column: pd.Series(global_obj_ids, dtype="string"),
+            object_type_column: pd.Series(global_obj_types, dtype="string")
         })
 
         # Add internal index for sorting the relations
