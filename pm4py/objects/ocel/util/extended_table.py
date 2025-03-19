@@ -106,11 +106,7 @@ def get_ocel_from_extended_table(
     )
 
     # Parse timestamp column upfront in the original DataFrame
-    df = dataframe_utils.convert_timestamp_columns_in_df(
-        df,
-        timest_format=pm4_constants.DEFAULT_TIMESTAMP_PARSE_FORMAT,
-        timest_columns=[event_timestamp],
-    )
+    df[event_timestamp] = pd.to_datetime(df[event_timestamp], format=pm4_constants.DEFAULT_TIMESTAMP_PARSE_FORMAT)
 
     # Identify columns efficiently
     object_type_columns = [col for col in df.columns if col.startswith(object_type_prefix)]
@@ -132,11 +128,12 @@ def get_ocel_from_extended_table(
     unique_objects = {ot: set() for ot in object_type_columns} if objects_df is None else None
 
     # Initialize progress bar
-    progress = _construct_progress_bar(len(df))
+    progress = _construct_progress_bar(len(events_df))
 
     # Create a filtered DataFrame with only needed columns
     needed_columns = [event_id, event_activity, event_timestamp] + object_type_columns
     filtered_df = df[needed_columns]
+    del df
 
     # ----------------------------------------------------------
     # Import PyArrow for memory-efficient array handling
