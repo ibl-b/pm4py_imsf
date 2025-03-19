@@ -94,40 +94,61 @@ def __compress(list_events):
 
 def apply(log, parameters=None):
     """
-      Converts the event log to an event stream
+    Converts the event log to an event stream
 
-      Parameters
-      ----------
-      log: :class:`pm4py.log.log.EventLog`
-          An Event log
-      include_case_attributes:
-          Default is True
-      case_attribute_prefix:
-          Default is 'case:'
-      enable_deepcopy
-          Enables deepcopy (avoid references between input and output objects)
+    Parameters
+    ----------
+    log: :class:`pm4py.log.log.EventLog`
+        An Event log
+    include_case_attributes:
+        Default is True
+    case_attribute_prefix:
+        Default is 'case:'
+    enable_deepcopy
+        Enables deepcopy (avoid references between input and output objects)
 
-      Returns
-          -------
-      log : :class:`pm4py.log.log.EventLog`
-          An Event stream
-      """
+    Returns
+        -------
+    log : :class:`pm4py.log.log.EventLog`
+        An Event stream
+    """
     if parameters is None:
         parameters = {}
 
-    stream_post_processing = exec_utils.get_param_value(Parameters.STREAM_POST_PROCESSING, parameters, False)
-    case_pref = exec_utils.get_param_value(Parameters.CASE_ATTRIBUTE_PREFIX, parameters, 'case:')
-    enable_deepcopy = exec_utils.get_param_value(Parameters.DEEP_COPY, parameters, True)
-    include_case_attributes = exec_utils.get_param_value(Parameters.INCLUDE_CASE_ATTRIBUTES, parameters, True)
-    compress = exec_utils.get_param_value(Parameters.COMPRESS, parameters, False)
-    extensions = exec_utils.get_param_value(Parameters.EXTENSIONS, parameters, None)
+    stream_post_processing = exec_utils.get_param_value(
+        Parameters.STREAM_POST_PROCESSING, parameters, False
+    )
+    case_pref = exec_utils.get_param_value(
+        Parameters.CASE_ATTRIBUTE_PREFIX, parameters, "case:"
+    )
+    enable_deepcopy = exec_utils.get_param_value(
+        Parameters.DEEP_COPY, parameters, True
+    )
+    include_case_attributes = exec_utils.get_param_value(
+        Parameters.INCLUDE_CASE_ATTRIBUTES, parameters, True
+    )
+    compress = exec_utils.get_param_value(
+        Parameters.COMPRESS, parameters, False
+    )
+    extensions = exec_utils.get_param_value(
+        Parameters.EXTENSIONS, parameters, None
+    )
 
     if pandas_utils.check_is_pandas_dataframe(log):
-        return __transform_dataframe_to_event_stream(log, stream_post_processing=stream_post_processing, compress=compress, extensions=extensions)
+        return __transform_dataframe_to_event_stream(
+            log,
+            stream_post_processing=stream_post_processing,
+            compress=compress,
+            extensions=extensions,
+        )
 
     if isinstance(log, EventLog):
-        return __transform_event_log_to_event_stream(log, include_case_attributes=include_case_attributes,
-                                                     case_attribute_prefix=case_pref, enable_deepcopy=enable_deepcopy)
+        return __transform_event_log_to_event_stream(
+            log,
+            include_case_attributes=include_case_attributes,
+            case_attribute_prefix=case_pref,
+            enable_deepcopy=enable_deepcopy,
+        )
 
     return log
 
@@ -135,14 +156,16 @@ def apply(log, parameters=None):
 def __detect_extensions(df):
     extensions = set()
     for col in df.columns:
-        for single_key in col.split(':'):
+        for single_key in col.split(":"):
             for ext in XESExtension:
                 if single_key == ext.prefix:
                     extensions.add(ext)
     return extensions
 
 
-def __transform_dataframe_to_event_stream(dataframe, stream_post_processing=False, compress=True, extensions=None):
+def __transform_dataframe_to_event_stream(
+    dataframe, stream_post_processing=False, compress=True, extensions=None
+):
     """
     Transforms a dataframe to an event stream
 
@@ -171,21 +194,26 @@ def __transform_dataframe_to_event_stream(dataframe, stream_post_processing=Fals
         list_events = __compress(list_events)
     for i in range(len(list_events)):
         list_events[i] = Event(list_events[i])
-    if hasattr(dataframe, 'attrs'):
+    if hasattr(dataframe, "attrs"):
         properties = copy(dataframe.attrs)
         if pmutil.PARAMETER_CONSTANT_CASEID_KEY in properties:
             del properties[pmutil.PARAMETER_CONSTANT_CASEID_KEY]
     else:
         properties = {}
-    stream = log_instance.EventStream(list_events, attributes={'origin': 'csv'}, properties=properties)
+    stream = log_instance.EventStream(
+        list_events, attributes={"origin": "csv"}, properties=properties
+    )
     for ex in extensions:
         stream.extensions[ex.name] = {
             xes_constants.KEY_PREFIX: ex.prefix,
-            xes_constants.KEY_URI: ex.uri}
+            xes_constants.KEY_URI: ex.uri,
+        }
     return stream
 
 
-def __transform_dataframe_to_event_stream_new(dataframe, stream_post_processing=False, compress=False, extensions=None):
+def __transform_dataframe_to_event_stream_new(
+    dataframe, stream_post_processing=False, compress=False, extensions=None
+):
     """
     Transforms a dataframe to an event stream
 
@@ -224,43 +252,56 @@ def __transform_dataframe_to_event_stream_new(dataframe, stream_post_processing=
         list_events = __compress(list_events)
     for i in range(len(list_events)):
         list_events[i] = Event(list_events[i])
-    if hasattr(dataframe, 'attrs'):
+    if hasattr(dataframe, "attrs"):
         properties = copy(dataframe.attrs)
         if pmutil.PARAMETER_CONSTANT_CASEID_KEY in properties:
             del properties[pmutil.PARAMETER_CONSTANT_CASEID_KEY]
     else:
         properties = {}
-    stream = log_instance.EventStream(list_events, attributes={'origin': 'csv'}, properties=properties)
+    stream = log_instance.EventStream(
+        list_events, attributes={"origin": "csv"}, properties=properties
+    )
     for ex in extensions:
         stream.extensions[ex.name] = {
             xes_constants.KEY_PREFIX: ex.prefix,
-            xes_constants.KEY_URI: ex.uri}
+            xes_constants.KEY_URI: ex.uri,
+        }
     return stream
 
 
-def __transform_event_log_to_event_stream(log, include_case_attributes=True,
-                                          case_attribute_prefix=pmutil.CASE_ATTRIBUTE_PREFIX, enable_deepcopy=False):
+def __transform_event_log_to_event_stream(
+    log,
+    include_case_attributes=True,
+    case_attribute_prefix=pmutil.CASE_ATTRIBUTE_PREFIX,
+    enable_deepcopy=False,
+):
     """
-      Converts the event log to an event stream
+    Converts the event log to an event stream
 
-      Parameters
-      ----------
-      log: :class:`pm4py.log.log.EventLog`
-          An Event log
-      include_case_attributes:
-          Default is True
-      case_attribute_prefix:
-          Default is 'case:'
-      enable_deepcopy
-          Enables deepcopy (avoid references between input and output objects)
+    Parameters
+    ----------
+    log: :class:`pm4py.log.log.EventLog`
+        An Event log
+    include_case_attributes:
+        Default is True
+    case_attribute_prefix:
+        Default is 'case:'
+    enable_deepcopy
+        Enables deepcopy (avoid references between input and output objects)
 
-      Returns
-          -------
-      log : :class:`pm4py.log.log.EventLog`
-          An Event stream
-      """
-    event_stream = log_instance.EventStream([], attributes=log.attributes, classifiers=log.classifiers,
-                                    omni_present=log.omni_present, extensions=log.extensions, properties=log.properties)
+    Returns
+        -------
+    log : :class:`pm4py.log.log.EventLog`
+        An Event stream
+    """
+    event_stream = log_instance.EventStream(
+        [],
+        attributes=log.attributes,
+        classifiers=log.classifiers,
+        omni_present=log.omni_present,
+        extensions=log.extensions,
+        properties=log.properties,
+    )
     for index, trace in enumerate(log):
         for event in trace:
             new_event = deepcopy(event) if enable_deepcopy else event
