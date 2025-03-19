@@ -230,6 +230,8 @@ def get_ocel_from_extended_table(
     # Clean up progress bar
     _destroy_progress_bar(progress)
 
+    del filtered_df
+
     # Create the relations DataFrame only once at the end
     relations = pd.DataFrame()
     if len(global_ev_ids) > 0:
