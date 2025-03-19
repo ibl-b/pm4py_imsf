@@ -35,7 +35,7 @@ def apply(file_path: str, objects_path: str = None, parameters: Optional[Dict[An
         parameters = {}
 
     encoding = exec_utils.get_param_value(Parameters.ENCODING, parameters, pm4_constants.DEFAULT_ENCODING)
-    table = pandas_utils.read_csv(file_path, index_col=False, encoding=encoding)
+    table = pandas_utils.read_csv(file_path, index_col=False, encoding=encoding, dtype=str)
 
     objects = None
     if objects_path is not None:

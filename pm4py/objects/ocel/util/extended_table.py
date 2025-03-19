@@ -128,8 +128,6 @@ def get_ocel_from_extended_table(
     # Sort by timestamp and index
     events_df.sort_values([event_timestamp, internal_index], inplace=True)
 
-    #print(events_df)
-
     # Track unique objects if needed
     unique_objects = {ot: set() for ot in object_type_columns} if objects_df is None else None
 
@@ -140,10 +138,17 @@ def get_ocel_from_extended_table(
     needed_columns = [event_id, event_activity, event_timestamp] + object_type_columns
     filtered_df = df[needed_columns]
 
-    # Initialize the main relations DataFrame with the correct columns
-    relations = pd.DataFrame(columns=[
-        event_id, event_activity, event_timestamp, object_id_column, object_type_column
-    ])
+    # ----------------------------------------------------------
+    # Import PyArrow for memory-efficient array handling
+    import pyarrow as pa
+
+    # Initialize empty PyArrow arrays for each column
+    global_ev_ids = pa.array([], type=pa.string())
+    global_ev_activities = pa.array([], type=pa.string())
+    global_ev_timestamps = pa.array([], type=pa.timestamp('ns'))
+    global_obj_ids = pa.array([], type=pa.string())
+    global_obj_types = pa.array([], type=pa.string())
+    # ----------------------------------------------------------
 
     # Process DataFrame in chunks to avoid memory issues
     total_rows = len(filtered_df)
@@ -188,21 +193,21 @@ def get_ocel_from_extended_table(
             if progress is not None:
                 progress.update(1)
 
-        # Create a chunk relations DataFrame and concatenate to main relations DataFrame
+        # Append chunk data to global PyArrow arrays
         if chunk_ev_ids:
-            chunk_relations = pd.DataFrame({
-                event_id: chunk_ev_ids,
-                event_activity: chunk_ev_activities,
-                event_timestamp: chunk_ev_timestamps,
-                object_id_column: chunk_obj_ids,
-                object_type_column: chunk_obj_types
-            })
+            # Convert chunk lists to PyArrow arrays
+            chunk_ev_ids_pa = pa.array(chunk_ev_ids, type=pa.string())
+            chunk_ev_activities_pa = pa.array(chunk_ev_activities, type=pa.string())
+            chunk_ev_timestamps_pa = pa.array(chunk_ev_timestamps, type=pa.timestamp('ns'))
+            chunk_obj_ids_pa = pa.array(chunk_obj_ids, type=pa.string())
+            chunk_obj_types_pa = pa.array(chunk_obj_types, type=pa.string())
 
-            # Concatenate to the main relations DataFrame immediately
-            relations = pd.concat([relations, chunk_relations], ignore_index=True)
-
-            # Free chunk_relations memory explicitly
-            del chunk_relations
+            # Concatenate with existing arrays using pa.concat_arrays instead of pa.concat
+            global_ev_ids = pa.concat_arrays([global_ev_ids, chunk_ev_ids_pa])
+            global_ev_activities = pa.concat_arrays([global_ev_activities, chunk_ev_activities_pa])
+            global_ev_timestamps = pa.concat_arrays([global_ev_timestamps, chunk_ev_timestamps_pa])
+            global_obj_ids = pa.concat_arrays([global_obj_ids, chunk_obj_ids_pa])
+            global_obj_types = pa.concat_arrays([global_obj_types, chunk_obj_types_pa])
 
         # Merge unique objects if tracking
         if unique_objects is not None:
@@ -217,8 +222,19 @@ def get_ocel_from_extended_table(
     # Clean up progress bar
     _destroy_progress_bar(progress)
 
-    # Add internal index for sorting the relations
-    if not relations.empty:
+    # Create the relations DataFrame only once at the end
+    relations = pd.DataFrame()
+    if len(global_ev_ids) > 0:
+        # Create dataframe directly from PyArrow arrays
+        relations = pd.DataFrame({
+            event_id: global_ev_ids.to_pandas(),
+            event_activity: global_ev_activities.to_pandas(),
+            event_timestamp: global_ev_timestamps.to_pandas(),
+            object_id_column: global_obj_ids.to_pandas(),
+            object_type_column: global_obj_types.to_pandas()
+        })
+
+        # Add internal index for sorting the relations
         relations[internal_index] = relations.index
 
         # Sort by timestamp and index
@@ -227,7 +243,8 @@ def get_ocel_from_extended_table(
         # Remove temporary index column
         del relations[internal_index]
 
-    #print(relations)
+    # Free memory for global lists
+    del global_ev_ids, global_ev_activities, global_ev_timestamps, global_obj_ids, global_obj_types
 
     # Remove temporary index column from events
     del events_df[internal_index]
@@ -253,7 +270,7 @@ def get_ocel_from_extended_table(
         # Free memory
         del obj_types_list, obj_ids_list, unique_objects
 
-    #print(objects_df)
+    relations.info()
 
     # Create and return OCEL object
     return OCEL(
