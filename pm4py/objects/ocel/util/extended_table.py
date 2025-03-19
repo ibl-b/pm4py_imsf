@@ -251,6 +251,9 @@ def get_ocel_from_extended_table(
             object_type_column: global_obj_types
         })
 
+        # Free memory for global lists
+        del global_ev_ids, global_ev_activities, global_ev_timestamps, global_obj_ids, global_obj_types
+
         # Add internal index for sorting the relations
         relations[internal_index] = relations.index
 
@@ -259,9 +262,6 @@ def get_ocel_from_extended_table(
 
         # Remove temporary index column
         del relations[internal_index]
-
-    # Free memory for global lists
-    del global_ev_ids, global_ev_activities, global_ev_timestamps, global_obj_ids, global_obj_types
 
     # Remove temporary index column from events
     del events_df[internal_index]
