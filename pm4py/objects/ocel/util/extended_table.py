@@ -21,14 +21,14 @@ Contact: info@processintelligence.solutions
 '''
 import ast
 from enum import Enum
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 
 import pandas as pd
 import importlib.util
 
 from pm4py.objects.ocel import constants
 from pm4py.objects.ocel.obj import OCEL
-from pm4py.util import exec_utils, pandas_utils, constants as pm4_constants
+from pm4py.util import exec_utils, constants as pm4_constants
 from pm4py.objects.log.util import dataframe_utils
 
 
@@ -80,8 +80,9 @@ def safe_parse_list(value):
 
 def get_ocel_from_extended_table(
         df: pd.DataFrame,
-        objects_df: Optional[Dict[Any, Any]] = None,
+        objects_df: Optional[pd.DataFrame] = None,
         parameters: Optional[Dict[Any, Any]] = None,
+        chunk_size: int = 50000,  # Default chunk size
 ) -> OCEL:
     """
     Get an OCEL object from an extended table format.
@@ -90,6 +91,7 @@ def get_ocel_from_extended_table(
         df: The DataFrame in extended table format
         objects_df: Optional DataFrame of objects
         parameters: Optional parameters dictionary
+        chunk_size: Size of chunks to process
 
     Returns:
         An OCEL object
@@ -124,122 +126,186 @@ def get_ocel_from_extended_table(
         Parameters.INTERNAL_INDEX, parameters, constants.DEFAULT_INTERNAL_INDEX
     )
 
+    # Parse timestamp column upfront in the original DataFrame
+    df[event_timestamp] = pd.to_datetime(df[event_timestamp], format=pm4_constants.DEFAULT_TIMESTAMP_PARSE_FORMAT)
+
     # Identify columns efficiently
     object_type_columns = [col for col in df.columns if col.startswith(object_type_prefix)]
     non_object_type_columns = [col for col in df.columns if not col.startswith(object_type_prefix)]
 
-    # Pre-compute object type mappings (do this once outside the loop)
+    # Pre-compute object type mappings
     object_type_mapping = {ot: ot.split(object_type_prefix)[1] for ot in object_type_columns}
 
-    # Use lists for relation data (more memory efficient than constantly growing dicts)
-    ev_ids = []
-    ev_activities = []
-    ev_timestamps = []
-    obj_ids = []
-    obj_types = []
+    # Create events DataFrame (only non-object columns)
+    events_df = df[non_object_type_columns]
 
-    # Prepare sets for tracking unique objects
-    objects_set = {ot: set() for ot in object_type_columns}
+    # Add internal index for sorting events
+    events_df[internal_index] = events_df.index
 
-    # Select only necessary columns for processing
-    required_columns = [event_id, event_activity, event_timestamp] + object_type_columns
+    # Sort by timestamp and index
+    events_df.sort_values([event_timestamp, internal_index], inplace=True)
 
-    progress = _construct_progress_bar(len(df))
+    # Track unique objects if needed
+    unique_objects = {ot: set() for ot in object_type_columns} if objects_df is None else None
 
-    # Process rows efficiently
-    for _, row in df[required_columns].iterrows():
-        ev_id = row[event_id]
-        ev_activity = row[event_activity]
-        ev_timestamp = row[event_timestamp]
+    # Initialize progress bar
+    progress = _construct_progress_bar(len(events_df))
 
-        for ot in object_type_columns:
-            # Parse the list of objects safely
-            obj_list = safe_parse_list(row[ot])
-            ot_striped = object_type_mapping[ot]
+    # Create a filtered DataFrame with only needed columns
+    needed_columns = [event_id, event_activity, event_timestamp] + object_type_columns
+    filtered_df = df[needed_columns]
+    del df
 
-            # Update the set of unique objects
-            objects_set[ot].update(obj_list)
+    # ----------------------------------------------------------
+    # Import PyArrow for memory-efficient array handling
+    import pyarrow as pa
 
-            # Add relation data
-            for obj in obj_list:
-                ev_ids.append(ev_id)
-                ev_activities.append(ev_activity)
-                ev_timestamps.append(ev_timestamp)
-                obj_ids.append(obj)
-                obj_types.append(ot_striped)
+    # Initialize empty PyArrow arrays for each column
+    global_ev_ids = pa.array([], type=pa.large_string())
+    global_ev_activities = pa.array([], type=pa.large_string())
+    global_ev_timestamps = pa.array([], type=pa.timestamp('ns'))
+    global_obj_ids = pa.array([], type=pa.large_string())
+    global_obj_types = pa.array([], type=pa.large_string())
+    # ----------------------------------------------------------
 
-        if progress is not None:
-            progress.update()
+    # Process DataFrame in chunks to avoid memory issues
+    total_rows = len(filtered_df)
 
+    for chunk_start in range(0, total_rows, chunk_size):
+        chunk_end = min(chunk_start + chunk_size, total_rows)
+
+        # Extract a chunk
+        chunk = filtered_df.iloc[chunk_start:chunk_end]
+
+        # Convert small chunk to records for faster processing
+        chunk_records = chunk.to_dict('records')
+
+        # Create chunk-specific temporary lists
+        chunk_ev_ids = []
+        chunk_ev_activities = []
+        chunk_ev_timestamps = []
+        chunk_obj_ids = []
+        chunk_obj_types = []
+        chunk_unique_objects = {ot: list() for ot in object_type_columns} if objects_df is None else None
+
+        # Process records in the current chunk
+        for record in chunk_records:
+            for ot in object_type_columns:
+                obj_list = safe_parse_list(record[ot])
+                if obj_list:
+                    ot_striped = object_type_mapping[ot]
+
+                    # Update unique objects for this chunk if tracking
+                    if chunk_unique_objects is not None:
+                        chunk_unique_objects[ot].extend(obj_list)
+
+                    # Extend chunk-specific data efficiently
+                    n_objs = len(obj_list)
+                    chunk_ev_ids.extend([record[event_id]] * n_objs)
+                    chunk_ev_activities.extend([record[event_activity]] * n_objs)
+                    chunk_ev_timestamps.extend([record[event_timestamp]] * n_objs)
+                    chunk_obj_ids.extend(obj_list)
+                    chunk_obj_types.extend([ot_striped] * n_objs)
+
+            # Update progress (1 item at a time)
+            if progress is not None:
+                progress.update(1)
+
+        del chunk_records
+
+        # Append chunk data to global PyArrow arrays
+        if chunk_ev_ids:
+            # Convert chunk lists to PyArrow arrays
+            chunk_ev_ids_pa = pa.array(chunk_ev_ids, type=pa.large_string())
+            del chunk_ev_ids
+            chunk_ev_activities_pa = pa.array(chunk_ev_activities, type=pa.large_string())
+            del chunk_ev_activities
+            chunk_ev_timestamps_pa = pa.array(chunk_ev_timestamps, type=pa.timestamp('ns'))
+            del chunk_ev_timestamps
+            chunk_obj_ids_pa = pa.array(chunk_obj_ids, type=pa.large_string())
+            del chunk_obj_ids
+            chunk_obj_types_pa = pa.array(chunk_obj_types, type=pa.large_string())
+            del chunk_obj_types
+
+            # Concatenate with existing arrays using pa.concat_arrays instead of pa.concat
+            global_ev_ids = pa.concat_arrays([global_ev_ids, chunk_ev_ids_pa])
+            del chunk_ev_ids_pa
+            global_ev_activities = pa.concat_arrays([global_ev_activities, chunk_ev_activities_pa])
+            del chunk_ev_activities_pa
+            global_ev_timestamps = pa.concat_arrays([global_ev_timestamps, chunk_ev_timestamps_pa])
+            del chunk_ev_timestamps_pa
+            global_obj_ids = pa.concat_arrays([global_obj_ids, chunk_obj_ids_pa])
+            del chunk_obj_ids_pa
+            global_obj_types = pa.concat_arrays([global_obj_types, chunk_obj_types_pa])
+            del chunk_obj_types_pa
+
+        # Merge unique objects if tracking
+        if unique_objects is not None:
+            for ot in object_type_columns:
+                unique_objects[ot].update(set(chunk_unique_objects[ot]))
+
+        # Free memory
+        if chunk_unique_objects is not None:
+            del chunk_unique_objects
+
+    # Clean up progress bar
     _destroy_progress_bar(progress)
 
-    # Create relations DataFrame in one go (more efficient than incremental building)
-    relations = pd.DataFrame({
-        event_id: ev_ids,
-        event_activity: ev_activities,
-        event_timestamp: ev_timestamps,
-        object_id_column: obj_ids,
-        object_type_column: obj_types
-    })
+    del filtered_df
 
-    # Free memory
-    del ev_ids, ev_activities, ev_timestamps, obj_ids, obj_types
+    # Create the relations DataFrame only once at the end
+    relations = pd.DataFrame()
+    if len(global_ev_ids) > 0:
+        # Create dataframe directly from PyArrow arrays
+        global_ev_ids = global_ev_ids.to_pandas()
+        global_ev_activities = global_ev_activities.to_pandas()
+        global_ev_timestamps = global_ev_timestamps.to_pandas()
+        global_obj_ids = global_obj_ids.to_pandas()
+        global_obj_types = global_obj_types.to_pandas()
+
+        relations = pd.DataFrame({
+            event_id: global_ev_ids,
+            event_activity: global_ev_activities,
+            event_timestamp: global_ev_timestamps,
+            object_id_column: global_obj_ids,
+            object_type_column: global_obj_types
+        })
+
+        # Free memory for global lists
+        del global_ev_ids, global_ev_activities, global_ev_timestamps, global_obj_ids, global_obj_types
+
+        # Add internal index for sorting the relations
+        relations[internal_index] = relations.index
+
+        # Sort by timestamp and index
+        relations.sort_values([event_timestamp, internal_index], inplace=True)
+
+        # Remove temporary index column
+        del relations[internal_index]
+
+    # Remove temporary index column from events
+    del events_df[internal_index]
 
     # Create objects DataFrame if not provided
     if objects_df is None:
-        obj_type_list = []
-        obj_id_list = []
+        obj_types_list = []
+        obj_ids_list = []
 
         for ot in object_type_columns:
             ot_striped = object_type_mapping[ot]
-            ot_objects = list(objects_set[ot])
+            obj_ids = list(unique_objects[ot])
 
-            # More efficient than multiple appends
-            obj_type_list.extend([ot_striped] * len(ot_objects))
-            obj_id_list.extend(ot_objects)
+            if obj_ids:
+                obj_types_list.extend([ot_striped] * len(obj_ids))
+                obj_ids_list.extend(obj_ids)
 
         objects_df = pd.DataFrame({
-            object_type_column: obj_type_list,
-            object_id_column: obj_id_list
+            object_type_column: obj_types_list,
+            object_id_column: obj_ids_list
         })
 
         # Free memory
-        del obj_type_list, obj_id_list
-
-    # Free memory
-    del objects_set
-
-    # Process the events DataFrame (only non-object columns)
-    events_df = df[non_object_type_columns].copy()
-
-    # Convert timestamp columns
-    events_df = dataframe_utils.convert_timestamp_columns_in_df(
-        events_df,
-        timest_format=pm4_constants.DEFAULT_TIMESTAMP_PARSE_FORMAT,
-        timest_columns=[event_timestamp],
-    )
-
-    relations = dataframe_utils.convert_timestamp_columns_in_df(
-        relations,
-        timest_format=pm4_constants.DEFAULT_TIMESTAMP_PARSE_FORMAT,
-        timest_columns=[event_timestamp],
-    )
-
-    # Add internal index for sorting
-    events_df = pandas_utils.insert_index(
-        events_df, internal_index, copy_dataframe=False, reset_index=False
-    )
-    relations = pandas_utils.insert_index(
-        relations, internal_index, reset_index=False, copy_dataframe=False
-    )
-
-    # Sort by timestamp and index
-    events_df = events_df.sort_values([event_timestamp, internal_index])
-    relations = relations.sort_values([event_timestamp, internal_index])
-
-    # Remove temporary index columns
-    del events_df[internal_index]
-    del relations[internal_index]
+        del obj_types_list, obj_ids_list, unique_objects
 
     # Create and return OCEL object
     return OCEL(
