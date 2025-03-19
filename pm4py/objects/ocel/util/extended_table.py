@@ -128,6 +128,8 @@ def get_ocel_from_extended_table(
     # Sort by timestamp and index
     events_df.sort_values([event_timestamp, internal_index], inplace=True)
 
+    #print(events_df)
+
     # Track unique objects if needed
     unique_objects = {ot: set() for ot in object_type_columns} if objects_df is None else None
 
@@ -225,6 +227,8 @@ def get_ocel_from_extended_table(
         # Remove temporary index column
         del relations[internal_index]
 
+    #print(relations)
+
     # Remove temporary index column from events
     del events_df[internal_index]
 
@@ -248,6 +252,8 @@ def get_ocel_from_extended_table(
 
         # Free memory
         del obj_types_list, obj_ids_list, unique_objects
+
+    #print(objects_df)
 
     # Create and return OCEL object
     return OCEL(
