@@ -70,6 +70,7 @@ def get_ocel_from_extended_table(
         df: The DataFrame in extended table format
         objects_df: Optional DataFrame of objects
         parameters: Optional parameters dictionary
+        chunk_size: Size of chunks to process
 
     Returns:
         An OCEL object
@@ -129,13 +130,6 @@ def get_ocel_from_extended_table(
     # Sort by timestamp and index
     events_df = events_df.sort_values([event_timestamp, internal_index])
 
-    # Prepare global data structures for relations
-    ev_ids = []
-    ev_activities = []
-    ev_timestamps = []
-    obj_ids = []
-    obj_types = []
-
     # Track unique objects if needed
     unique_objects = {ot: set() for ot in object_type_columns} if objects_df is None else None
 
@@ -146,8 +140,10 @@ def get_ocel_from_extended_table(
     needed_columns = [event_id, event_activity, event_timestamp] + object_type_columns
     filtered_df = df[needed_columns]
 
+    # Initialize list to store partial relations dataframes
+    partial_relations_dfs = []
+
     # Process DataFrame in chunks to avoid memory issues
-    # Use the chunk_size parameter from function arguments
     total_rows = len(filtered_df)
 
     for chunk_start in range(0, total_rows, chunk_size):
@@ -190,12 +186,18 @@ def get_ocel_from_extended_table(
             if progress is not None:
                 progress.update(1)
 
-        # Merge chunk data with global data
-        ev_ids.extend(chunk_ev_ids)
-        ev_activities.extend(chunk_ev_activities)
-        ev_timestamps.extend(chunk_ev_timestamps)
-        obj_ids.extend(chunk_obj_ids)
-        obj_types.extend(chunk_obj_types)
+        # Create a partial relations DataFrame for this chunk
+        if chunk_ev_ids:
+            chunk_relations = pd.DataFrame({
+                event_id: chunk_ev_ids,
+                event_activity: chunk_ev_activities,
+                event_timestamp: chunk_ev_timestamps,
+                object_id_column: chunk_obj_ids,
+                object_type_column: chunk_obj_types
+            })
+
+            # Add to the list of partial relations DataFrames
+            partial_relations_dfs.append(chunk_relations)
 
         # Merge unique objects if tracking
         if unique_objects is not None:
@@ -210,15 +212,12 @@ def get_ocel_from_extended_table(
     # Clean up progress bar
     _destroy_progress_bar(progress)
 
-    # Create relations DataFrame in one go
-    if ev_ids:
-        relations = pd.DataFrame({
-            event_id: ev_ids,
-            event_activity: ev_activities,
-            event_timestamp: ev_timestamps,
-            object_id_column: obj_ids,
-            object_type_column: obj_types
-        })
+    # Concatenate all partial relations DataFrames
+    if partial_relations_dfs:
+        relations = pd.concat(partial_relations_dfs, ignore_index=True)
+
+        # Free memory
+        del partial_relations_dfs
 
         # Add internal index for sorting
         relations = pandas_utils.insert_index(
@@ -238,9 +237,6 @@ def get_ocel_from_extended_table(
 
     # Remove temporary index column from events
     del events_df[internal_index]
-
-    # Free memory
-    del ev_ids, ev_activities, ev_timestamps, obj_ids, obj_types
 
     # Create objects DataFrame if not provided
     if objects_df is None:
