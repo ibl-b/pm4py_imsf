@@ -110,7 +110,7 @@ def apply(prompt: str, parameters: Optional[Dict[Any, Any]] = None) -> str:
 
     if use_responses_api:
         response = requests.post(
-            api_url + "responses", headers=headers, json=payload
+            api_url + "responses", headers=headers, json=payload, timeout=20*60
         )
 
         response = response.json()
@@ -122,7 +122,7 @@ def apply(prompt: str, parameters: Optional[Dict[Any, Any]] = None) -> str:
         return response["output"][0]["content"][0]["text"]
     else:
         response = requests.post(
-            api_url + "chat/completions", headers=headers, json=payload
+            api_url + "chat/completions", headers=headers, json=payload, timeout=20*60
         ).json()
 
         if "error" in response:
