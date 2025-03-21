@@ -13,6 +13,7 @@ class Parameters(Enum):
     OPENAI_MODEL = "openai_model"
     IMAGE_PATH = "image_path"
     MAX_TOKENS = "max_tokens"
+    USE_RESPONSES_API = "use_responses_api"
 
 
 def encode_image(image_path):
@@ -44,6 +45,8 @@ def apply(prompt: str, parameters: Optional[Dict[Any, Any]] = None) -> str:
         if not api_url.endswith("/"):
             api_url += "/"
 
+    use_responses_api = exec_utils.get_param_value(Parameters.USE_RESPONSES_API, parameters, "api.openai" in api_url)
+
     model = exec_utils.get_param_value(
         Parameters.OPENAI_MODEL,
         parameters,
@@ -60,14 +63,19 @@ def apply(prompt: str, parameters: Optional[Dict[Any, Any]] = None) -> str:
     }
 
     messages = []
-    if simple_content_specification:
-        messages.append({"role": "user", "content": prompt})
-    else:
-        messages.append(
-            {"role": "user", "content": [{"type": "text", "text": prompt}]}
-        )
-
     payload = {"model": model}
+
+    if use_responses_api:
+        messages.append(
+            {"role": "user", "content": [{"type": "input_text", "text": prompt}]}
+        )
+    else:
+        if simple_content_specification:
+            messages.append({"role": "user", "content": prompt})
+        else:
+            messages.append(
+                {"role": "user", "content": [{"type": "text", "text": prompt}]}
+            )
 
     if image_path is not None:
         max_tokens = exec_utils.get_param_value(
@@ -75,27 +83,50 @@ def apply(prompt: str, parameters: Optional[Dict[Any, Any]] = None) -> str:
         )
         image_format = os.path.splitext(image_path)[1][1:].lower()
         base64_image = encode_image(image_path)
-        messages[0]["content"].append(
-            {
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:image/{image_format};base64,{base64_image}"
-                },
-            }
+
+        if use_responses_api:
+            messages[0]["content"].append({
+                "type": "input_image",
+                "image_url": f"data:image/{image_format};base64,{base64_image}"
+            })
+        else:
+            messages[0]["content"].append(
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/{image_format};base64,{base64_image}"
+                    },
+                }
+            )
+            payload["max_tokens"] = max_tokens
+
+    if max_tokens is not None and not use_responses_api:
+        payload["max_tokens"] = max_tokens
+
+    if use_responses_api:
+        payload["input"] = messages
+    else:
+        payload["messages"] = messages
+
+    if use_responses_api:
+        response = requests.post(
+            api_url + "responses", headers=headers, json=payload
         )
-        payload["max_tokens"] = max_tokens
 
-    if max_tokens is not None:
-        payload["max_tokens"] = max_tokens
+        response = response.json()
 
-    payload["messages"] = messages
+        if "error" in response and response["error"]:
+            # raise an exception when the request fails, with the provided message
+            raise Exception(response["error"]["message"])
 
-    response = requests.post(
-        api_url + "chat/completions", headers=headers, json=payload
-    ).json()
+        return response["output"][0]["content"][0]["text"]
+    else:
+        response = requests.post(
+            api_url + "chat/completions", headers=headers, json=payload
+        ).json()
 
-    if "error" in response:
-        # raise an exception when the request fails, with the provided message
-        raise Exception(response["error"]["message"])
+        if "error" in response:
+            # raise an exception when the request fails, with the provided message
+            raise Exception(response["error"]["message"])
 
-    return response["choices"][0]["message"]["content"]
+        return response["choices"][0]["message"]["content"]
