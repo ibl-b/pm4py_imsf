@@ -119,7 +119,7 @@ def apply(prompt: str, parameters: Optional[Dict[Any, Any]] = None) -> str:
             # raise an exception when the request fails, with the provided message
             raise Exception(response["error"]["message"])
 
-        return response["output"][0]["content"][0]["text"]
+        return response["output"][-1]["content"][0]["text"]
     else:
         response = requests.post(
             api_url + "chat/completions", headers=headers, json=payload, timeout=20*60
