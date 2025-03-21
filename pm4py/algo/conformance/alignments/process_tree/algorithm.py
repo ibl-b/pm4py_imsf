@@ -1,6 +1,10 @@
-from pm4py.algo.conformance.alignments.process_tree.variants.approximated import matrix_lp as approximated_matrix_lp
-from pm4py.algo.conformance.alignments.process_tree.variants.approximated import original as approximated_original
-from pm4py.algo.conformance.alignments.process_tree.variants import search_graph_pt
+from pm4py.algo.conformance.alignments.process_tree.variants.approximated import (
+    matrix_lp as approximated_matrix_lp, )
+from pm4py.algo.conformance.alignments.process_tree.variants.approximated import (
+    original as approximated_original, )
+from pm4py.algo.conformance.alignments.process_tree.variants import (
+    search_graph_pt, dynamic_programming
+)
 
 from pm4py.util import exec_utils
 from enum import Enum
@@ -16,12 +20,18 @@ class Variants(Enum):
     APPROXIMATED_ORIGINAL = approximated_original
     APPROXIMATED_MATRIX_LP = approximated_matrix_lp
     SEARCH_GRAPH_PT = search_graph_pt
+    DYNAMIC_PROGRAMMING = dynamic_programming
 
 
 DEFAULT_VARIANT = Variants.SEARCH_GRAPH_PT
 
 
-def apply(obj: Union[EventLog, Trace, pd.DataFrame], pt: ProcessTree, variant=DEFAULT_VARIANT, parameters: Optional[Dict[Any, Any]] = None) -> Union[typing.AlignmentResult, typing.ListAlignments]:
+def apply(
+    obj: Union[EventLog, Trace, pd.DataFrame],
+    pt: ProcessTree,
+    variant=DEFAULT_VARIANT,
+    parameters: Optional[Dict[Any, Any]] = None,
+) -> Union[typing.AlignmentResult, typing.ListAlignments]:
     """
     Align an event log or a trace with a process tree
 
@@ -44,4 +54,6 @@ def apply(obj: Union[EventLog, Trace, pd.DataFrame], pt: ProcessTree, variant=DE
     if parameters is None:
         parameters = {}
 
-    return exec_utils.get_variant(variant).apply(obj, pt, parameters=parameters)
+    return exec_utils.get_variant(variant).apply(
+        obj, pt, parameters=parameters
+    )
