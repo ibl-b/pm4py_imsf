@@ -1,7 +1,5 @@
 from typing import Optional, Dict, Any
 
-import pandas as pd
-
 from pm4py.objects.ocel.obj import OCEL
 from pm4py.objects.ocel.util import extended_table
 from pm4py.objects.ocel.util import ocel_consistency
