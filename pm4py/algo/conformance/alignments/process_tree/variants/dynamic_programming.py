@@ -10,15 +10,33 @@ from pm4py.objects.process_tree.utils import generic
 from pm4py.objects.process_tree.obj import ProcessTree, Operator
 import time
 import sys
+import gc  # Added for explicit garbage collection
+
+# Global caches for reusing results across different trace alignments
+_global_cost_cache = {}
+_global_alignment_cache = {}
+_global_labels_cache = {}
+_global_variant_results = {}  # Cache for entire trace results
+
+
+def clear_global_caches():
+    """Clear all global caches to free memory"""
+    _global_cost_cache.clear()
+    _global_alignment_cache.clear()
+    _global_labels_cache.clear()
+    _global_variant_results.clear()
 
 
 class Parameters(Enum):
     ACTIVITY_KEY = constants.PARAMETER_CONSTANT_ACTIVITY_KEY
     SHOW_PROGRESS_BAR = "show_progress_bar"
     MAX_TOTAL_TIME = "max_total_time"
+    USE_GLOBAL_CACHE = "use_global_cache"  # New parameter
+    BATCH_SIZE = "batch_size"  # New parameter
+    CLEAR_GLOBAL_CACHE = "clear_global_cache"  # New parameter
 
 
-def align_trace_with_process_tree(trace, tree):
+def align_trace_with_process_tree(trace, tree, use_global_cache=False):
     """
     Aligns a trace with a process tree using dynamic programming.
     Returns both the cost and the actual alignment.
@@ -26,22 +44,31 @@ def align_trace_with_process_tree(trace, tree):
     Version based on:
     A Dynamic Programming Approach for Alignments on Process Trees
     http://processquerying.com/wp-content/uploads/2024/09/PQMI_2024_279_A_Dynamic_Programming_Approach_for_Alignments_on_Process_Trees.pdf
+
+    Enhanced with global caching and memory optimizations.
     """
     # Convert trace to tuple for consistent hashing
     trace_tuple = tuple(trace)
 
-    # Use dictionaries for memoization with optimized keys
-    cost_table = {}
-    alignment_table = {}
+    # Quick check for cached complete result
+    if use_global_cache and (trace_tuple, id(tree)) in _global_variant_results:
+        return _global_variant_results[(trace_tuple, id(tree))]
+
+    # Use appropriate caches based on parameter
+    cost_table = _global_cost_cache if use_global_cache else {}
+    alignment_table = _global_alignment_cache if use_global_cache else {}
+    labels_cache = _global_labels_cache if use_global_cache else {}
+
+    # Store tree ID for more efficient key creation
+    tree_id = id(tree)
 
     # Pre-compute all labels for each subtree and cache them
     # Use a more efficient immutable data structure (frozenset) for lookup
-    labels_cache = {}
-
     def compute_labels(subtree):
         """Compute and cache labels for each subtree"""
-        if subtree in labels_cache:
-            return labels_cache[subtree]
+        subtree_id = id(subtree)
+        if subtree_id in labels_cache:
+            return labels_cache[subtree_id]
 
         if subtree.operator is None:  # Leaf node
             labels = frozenset([subtree.label]) if subtree.label is not None else frozenset()
@@ -49,7 +76,7 @@ def align_trace_with_process_tree(trace, tree):
             child_labels = [compute_labels(child) for child in subtree.children]
             labels = frozenset().union(*child_labels)
 
-        labels_cache[subtree] = labels
+        labels_cache[subtree_id] = labels
         return labels
 
     # Pre-compute all labels at once
@@ -58,7 +85,16 @@ def align_trace_with_process_tree(trace, tree):
     # Optimize key creation for memoization
     def make_key(w, T):
         """Create an efficient key for memoization"""
-        return (w, id(T))
+        # Use tree_id which is precomputed
+        subtree_id = id(T)
+        # For empty traces, use a simpler key
+        if not w:
+            return (0, subtree_id)
+        # For short traces, include the entire trace in the key
+        if len(w) <= 3:
+            return (w, subtree_id)
+        # For longer traces, use length and boundary elements for better hashing
+        return ((len(w), w[0], w[-1]), subtree_id)
 
     # Create specialized functions for leaf nodes to avoid repeated code
     def handle_leaf_node(w, T):
@@ -114,21 +150,26 @@ def align_trace_with_process_tree(trace, tree):
             min_cost = float('inf')
             best_alignment = []
 
-            # Compute all costs for the first child with different splits
-            first_child_costs = []
-            first_child_alignments = []
+            # Pre-allocate arrays for first child costs (memory optimization)
+            first_child_costs = [float('inf')] * (w_len + 1)
+            first_child_alignments = [None] * (w_len + 1)
 
+            # Compute all costs for the first child with different splits
             for i in range(w_len + 1):
                 c1, a1 = cost(w[:i], T.children[0])
-                first_child_costs.append(c1)
-                first_child_alignments.append(a1)
+                first_child_costs[i] = c1
+                first_child_alignments[i] = a1
+
+            # Early termination optimization: sort indices by first child cost
+            # This helps find the optimal solution faster in many cases
+            sorted_indices = sorted(range(w_len + 1), key=lambda i: first_child_costs[i])
 
             # Compute all costs for the second child with different splits
-            for i in range(w_len + 1):
+            for i in sorted_indices:
                 c1 = first_child_costs[i]
                 a1 = first_child_alignments[i]
 
-                # Skip if we already exceed the minimum cost
+                # Skip if we already exceed the minimum cost (early pruning)
                 if c1 >= min_cost:
                     continue
 
@@ -156,8 +197,10 @@ def align_trace_with_process_tree(trace, tree):
 
         elif T.operator == Operator.PARALLEL:
             # Optimize parallel operator by using pre-computed labels
-            labels_T1 = labels_cache[T.children[0]]
-            labels_T2 = labels_cache[T.children[1]]
+            subtree_id1 = id(T.children[0])
+            subtree_id2 = id(T.children[1])
+            labels_T1 = labels_cache[subtree_id1]
+            labels_T2 = labels_cache[subtree_id2]
 
             # Partition the trace based on labels
             w1 = tuple(a for a in w if a in labels_T1)
@@ -234,9 +277,10 @@ def align_trace_with_process_tree(trace, tree):
                     distances[pos] = c
                     predecessors[pos] = ('T1', 0, pos, a)
 
-            # More efficient loop expansion
+            # More efficient loop expansion with early pruning
             for i in range(w_len + 1):
-                if distances[i] >= float('inf'):
+                if distances[i] >= float('inf') or distances[i] >= distances[w_len]:
+                    # Skip unreachable positions or paths already worse than current best
                     continue
 
                 # Try to exit the loop
@@ -318,7 +362,13 @@ def align_trace_with_process_tree(trace, tree):
         return result
 
     # Run the algorithm
-    return cost(trace_tuple, tree)
+    final_result = cost(trace_tuple, tree)
+
+    # Store complete result in global cache if enabled
+    if use_global_cache:
+        _global_variant_results[(trace_tuple, tree_id)] = final_result
+
+    return final_result
 
 
 def _construct_progress_bar(progress_length, parameters):
@@ -340,52 +390,72 @@ def _destroy_progress_bar(progress):
 
 def apply_list_tuple_activities(list_tuple_activities: List[Collection[str]], process_tree: ProcessTree,
                                 parameters: Optional[Dict[Any, Any]] = None) -> List[Dict[str, Any]]:
-    """Apply alignment to a list of trace activity tuples"""
+    """Apply alignment to a list of trace activity tuples with memory optimization"""
     if parameters is None:
         parameters = {}
 
+    use_global_cache = exec_utils.get_param_value(Parameters.USE_GLOBAL_CACHE, parameters, False)
     max_total_time = exec_utils.get_param_value(Parameters.MAX_TOTAL_TIME, parameters, sys.maxsize)
+    batch_size = exec_utils.get_param_value(Parameters.BATCH_SIZE, parameters, 1000)  # Process in batches
+
+    # Clear global caches if requested
+    if exec_utils.get_param_value(Parameters.CLEAR_GLOBAL_CACHE, parameters, True):
+        clear_global_caches()
 
     # Convert process tree to binary tree for alignment
     process_tree = generic.process_tree_to_binary_process_tree(process_tree)
 
-    # Optimize by processing unique variants once
-    variants = set(tuple(v) for v in list_tuple_activities)
+    # Optimize by processing unique variants once and counting occurrences
+    variant_dict = {}
+    for trace in list_tuple_activities:
+        trace_tuple = tuple(trace)
+        if trace_tuple not in variant_dict:
+            variant_dict[trace_tuple] = 0
+        variant_dict[trace_tuple] += 1
+
+    variants = list(variant_dict.keys())
     variants_align = {}
 
     progress = _construct_progress_bar(len(variants), parameters)
 
     # Calculate empty trace alignment
-    empty_cost, empty_moves = align_trace_with_process_tree([], process_tree)
+    empty_cost, empty_moves = align_trace_with_process_tree([], process_tree, use_global_cache)
     empty_cost = round(empty_cost + 10 ** -14, 13)
 
     # Track time for early termination
     t0 = time.time_ns()
 
-    # Process each variant once
-    for v in variants:
-        alignment_cost, alignment_moves = align_trace_with_process_tree(v, process_tree)
-        alignment_cost = round(alignment_cost + 10 ** -14, 13)
+    # Process variants in batches for memory efficiency
+    for i in range(0, len(variants), batch_size):
+        batch = variants[i:i + batch_size]
 
-        # Calculate fitness
-        trace_len = len(v)
-        denominator = empty_cost + trace_len
-        fitness = 1.0 - alignment_cost / denominator if denominator > 0 else 0.0
+        for v in batch:
+            alignment_cost, alignment_moves = align_trace_with_process_tree(v, process_tree, use_global_cache)
+            alignment_cost = round(alignment_cost + 10 ** -14, 13)
 
-        variants_align[v] = {
-            "cost": alignment_cost,
-            "alignment": alignment_moves,
-            "fitness": fitness
-        }
+            # Calculate fitness
+            trace_len = len(v)
+            denominator = empty_cost + trace_len
+            fitness = 1.0 - alignment_cost / denominator if denominator > 0 else 0.0
 
-        if progress is not None:
-            progress.update()
+            variants_align[v] = {
+                "cost": alignment_cost,
+                "alignment": alignment_moves,
+                "fitness": fitness
+            }
 
-        # Check if we've exceeded the maximum time
-        t1 = time.time_ns()
-        if (t1 - t0) / 10 ** 9 > max_total_time:
-            _destroy_progress_bar(progress)
-            return None
+            if progress is not None:
+                progress.update()
+
+            # Check if we've exceeded the maximum time
+            t1 = time.time_ns()
+            if (t1 - t0) / 10 ** 9 > max_total_time:
+                _destroy_progress_bar(progress)
+                return None
+
+        # Force garbage collection between batches if not using global cache
+        if not use_global_cache and i + batch_size < len(variants):
+            gc.collect()
 
     _destroy_progress_bar(progress)
 
@@ -412,6 +482,9 @@ def apply(log: Union[pd.DataFrame, EventLog], process_tree: ProcessTree, paramet
         - Parameters.ACTIVITY_KEY => the attribute to be used as activity
         - Parameters.SHOW_PROGRESS_BAR => shows the progress bar
         - Parameters.MAX_TOTAL_TIME => maximum total time in seconds
+        - Parameters.USE_GLOBAL_CACHE => use global caching to reuse results (default: False)
+        - Parameters.BATCH_SIZE => size of batches for processing (default: 1000)
+        - Parameters.CLEAR_GLOBAL_CACHE => clear global cache before processing (default: True)
 
     Returns
     ---------------
@@ -426,5 +499,5 @@ def apply(log: Union[pd.DataFrame, EventLog], process_tree: ProcessTree, paramet
     # Project log on activities and convert to tuples
     list_tuple_activities = project_on_event_attribute(log, activity_key)
 
-    # Apply alignment
+    # Apply alignment with optimizations
     return apply_list_tuple_activities(list_tuple_activities, process_tree, parameters=parameters)
