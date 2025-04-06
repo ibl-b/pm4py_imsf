@@ -11,7 +11,11 @@ class Variants(Enum):
     WO_DECORATION = wo_decoration
 
 
-def apply(ocpn: Dict[str, Any], variant=Variants.WO_DECORATION, parameters: Optional[Dict[Any, Any]] = None) -> Digraph:
+def apply(
+    ocpn: Dict[str, Any],
+    variant=Variants.WO_DECORATION,
+    parameters: Optional[Dict[Any, Any]] = None,
+) -> Digraph:
     """
     Obtains a visualization of the provided object-centric Petri net
 
