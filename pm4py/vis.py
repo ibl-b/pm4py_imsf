@@ -925,7 +925,20 @@ def save_vis_events_distribution_graph(log: Union[EventLog, pd.DataFrame], file_
     return graphs_visualizer.save(gviz, file_path)
 
 
-def view_ocdfg(ocdfg: Dict[str, Any], annotation: str = "frequency", act_metric: str = "events", edge_metric="event_couples", act_threshold: int = 0, edge_threshold: int = 0, performance_aggregation: str = "mean", format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW, bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None, variant_str: str = "classic"):
+def view_ocdfg(
+    ocdfg: Dict[str, Any],
+    annotation: str = "frequency",
+    act_metric: str = "events",
+    edge_metric="event_couples",
+    act_threshold: int = 0,
+    edge_threshold: int = 0,
+    performance_aggregation: str = "mean",
+    format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW,
+    bgcolor: str = "white",
+    rankdir: str = constants.DEFAULT_RANKDIR_GVIZ,
+    graph_title: Optional[str] = None,
+    variant_str: str = "classic",
+):
     """
     Views an OC-DFG (object-centric directly-follows graph).
 
@@ -951,6 +964,7 @@ def view_ocdfg(ocdfg: Dict[str, Any], annotation: str = "frequency", act_metric:
     """
     fmt = _extract_format(format)
     from pm4py.visualization.ocel.ocdfg import visualizer
+
     parameters = _setup_parameters(fmt, bgcolor, rankdir, graph_title)
     parameters["annotation"] = annotation
     parameters["act_metric"] = act_metric
@@ -959,13 +973,31 @@ def view_ocdfg(ocdfg: Dict[str, Any], annotation: str = "frequency", act_metric:
     parameters["edge_threshold"] = edge_threshold
     parameters["aggregation_measure"] = performance_aggregation
 
-    variant = visualizer.Variants.CLASSIC if variant_str == "classic" else visualizer.Variants.ELKJS
+    variant = (
+        visualizer.Variants.CLASSIC
+        if variant_str == "classic"
+        else visualizer.Variants.ELKJS
+    )
 
     gviz = visualizer.apply(ocdfg, variant=variant, parameters=parameters)
     visualizer.view(gviz, variant=variant)
 
 
-def save_vis_ocdfg(ocdfg: Dict[str, Any], file_path: str, annotation: str = "frequency", act_metric: str = "events", edge_metric="event_couples", act_threshold: int = 0, edge_threshold: int = 0, performance_aggregation: str = "mean", bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None, variant_str: str = "classic", **kwargs):
+def save_vis_ocdfg(
+    ocdfg: Dict[str, Any],
+    file_path: str,
+    annotation: str = "frequency",
+    act_metric: str = "events",
+    edge_metric="event_couples",
+    act_threshold: int = 0,
+    edge_threshold: int = 0,
+    performance_aggregation: str = "mean",
+    bgcolor: str = "white",
+    rankdir: str = constants.DEFAULT_RANKDIR_GVIZ,
+    graph_title: Optional[str] = None,
+    variant_str: str = "classic",
+    **kwargs
+):
     """
     Saves the visualization of an OC-DFG.
 
@@ -991,6 +1023,7 @@ def save_vis_ocdfg(ocdfg: Dict[str, Any], file_path: str, annotation: str = "fre
     """
     fmt = _extract_format(file_path)
     from pm4py.visualization.ocel.ocdfg import visualizer
+
     parameters = _setup_parameters(fmt, bgcolor, rankdir, graph_title)
     parameters["annotation"] = annotation
     parameters["act_metric"] = act_metric
@@ -999,12 +1032,22 @@ def save_vis_ocdfg(ocdfg: Dict[str, Any], file_path: str, annotation: str = "fre
     parameters["edge_threshold"] = edge_threshold
     parameters["aggregation_measure"] = performance_aggregation
 
-    variant = visualizer.Variants.CLASSIC if variant_str == "classic" else visualizer.Variants.ELKJS
+    variant = (
+        visualizer.Variants.CLASSIC
+        if variant_str == "classic"
+        else visualizer.Variants.ELKJS
+    )
     gviz = visualizer.apply(ocdfg, variant=variant, parameters=parameters)
     return visualizer.save(gviz, file_path, variant=variant)
 
 
-def view_ocpn(ocpn: Dict[str, Any], format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW, bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None):
+def view_ocpn(
+    ocpn: Dict[str, Any],
+    format: str = constants.DEFAULT_FORMAT_GVIZ_VIEW,
+    bgcolor: str = "white",
+    rankdir: str = constants.DEFAULT_RANKDIR_GVIZ,
+    graph_title: Optional[str] = None,
+):
     """
     Visualizes the object-centric Petri net.
 
@@ -1023,12 +1066,20 @@ def view_ocpn(ocpn: Dict[str, Any], format: str = constants.DEFAULT_FORMAT_GVIZ_
     """
     fmt = _extract_format(format)
     from pm4py.visualization.ocel.ocpn import visualizer as ocpn_visualizer
+
     props = _setup_parameters(fmt, bgcolor, rankdir, graph_title)
     gviz = ocpn_visualizer.apply(ocpn, parameters=props)
     ocpn_visualizer.view(gviz)
 
 
-def save_vis_ocpn(ocpn: Dict[str, Any], file_path: str, bgcolor: str = "white", rankdir: str = constants.DEFAULT_RANKDIR_GVIZ, graph_title: Optional[str] = None, **kwargs):
+def save_vis_ocpn(
+    ocpn: Dict[str, Any],
+    file_path: str,
+    bgcolor: str = "white",
+    rankdir: str = constants.DEFAULT_RANKDIR_GVIZ,
+    graph_title: Optional[str] = None,
+    **kwargs
+):
     """
     Saves the visualization of the object-centric Petri net into a file.
 
@@ -1047,6 +1098,7 @@ def save_vis_ocpn(ocpn: Dict[str, Any], file_path: str, bgcolor: str = "white", 
     """
     fmt = _extract_format(file_path)
     from pm4py.visualization.ocel.ocpn import visualizer as ocpn_visualizer
+
     props = _setup_parameters(fmt, bgcolor, rankdir, graph_title)
     gviz = ocpn_visualizer.apply(ocpn, parameters=props)
     return ocpn_visualizer.save(gviz, file_path)

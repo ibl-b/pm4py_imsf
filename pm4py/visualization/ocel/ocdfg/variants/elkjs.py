@@ -27,9 +27,12 @@ def wrap_text(text: str, max_length: int = 15) -> str:
 
     for word in words:
         # If adding this word to the current line would exceed max_length
-        if current_length + len(word) + (1 if current_line else 0) > max_length:
+        if (
+            current_length + len(word) + (1 if current_line else 0)
+            > max_length
+        ):
             # Join the current line into a string and append to results
-            result_lines.append(' '.join(current_line))
+            result_lines.append(" ".join(current_line))
             # Start a new line with the current word
             current_line = [word]
             current_length = len(word)
@@ -43,18 +46,22 @@ def wrap_text(text: str, max_length: int = 15) -> str:
 
     # Append the last line if there is any leftover
     if current_line:
-        result_lines.append(' '.join(current_line))
+        result_lines.append(" ".join(current_line))
 
-    return '\n'.join(result_lines)
+    return "\n".join(result_lines)
 
 
 def get_html_file_contents():
-    with importlib.resources.path("pm4py.visualization.ocel.ocdfg.util", "elkjs_ocdfg.html") as p:
-        with open(str(p), 'r') as html_file:
+    with importlib.resources.path(
+        "pm4py.visualization.ocel.ocdfg.util", "elkjs_ocdfg.html"
+    ) as p:
+        with open(str(p), "r") as html_file:
             return html_file.read()
 
 
-def apply(ocdfg: Dict[str, Any], parameters: Optional[Dict[Any, Any]] = None) -> str:
+def apply(
+    ocdfg: Dict[str, Any], parameters: Optional[Dict[Any, Any]] = None
+) -> str:
     """
     Visualizes an OC-DFG using ELK.JS
 
@@ -92,23 +99,39 @@ def apply(ocdfg: Dict[str, Any], parameters: Optional[Dict[Any, Any]] = None) ->
 
     from statistics import mean, median
 
-    encoding = exec_utils.get_param_value(Parameters.ENCODING, parameters, constants.DEFAULT_ENCODING)
-    aggregation_measure = exec_utils.get_param_value(Parameters.PERFORMANCE_AGGREGATION_MEASURE, parameters,
-                                                                 "mean")
-    act_key = exec_utils.get_param_value(Parameters.ACT_METRIC, parameters, "events")
-    edge_key = exec_utils.get_param_value(Parameters.EDGE_METRIC, parameters, "event_couples")
-    annotation = exec_utils.get_param_value(Parameters.ANNOTATION, parameters, "frequency")
+    encoding = exec_utils.get_param_value(
+        Parameters.ENCODING, parameters, constants.DEFAULT_ENCODING
+    )
+    aggregation_measure = exec_utils.get_param_value(
+        Parameters.PERFORMANCE_AGGREGATION_MEASURE, parameters, "mean"
+    )
+    act_key = exec_utils.get_param_value(
+        Parameters.ACT_METRIC, parameters, "events"
+    )
+    edge_key = exec_utils.get_param_value(
+        Parameters.EDGE_METRIC, parameters, "event_couples"
+    )
+    annotation = exec_utils.get_param_value(
+        Parameters.ANNOTATION, parameters, "frequency"
+    )
 
-    pref_act = " E=" if act_key == "events" else " UO=" if act_key == "unique_objects" else " TO="
-    pref_edge = " EC=" if edge_key == "event_couples" else " UO=" if edge_key == "unique_objects" else " TO="
+    pref_act = (
+        " E="
+        if act_key == "events"
+        else " UO=" if act_key == "unique_objects" else " TO="
+    )
+    pref_edge = (
+        " EC="
+        if edge_key == "event_couples"
+        else " UO=" if edge_key == "unique_objects" else " TO="
+    )
 
-    data = {
-        "objectTypes": [],
-        "overallActivityStats": {}
-    }
+    data = {"objectTypes": [], "overallActivityStats": {}}
 
     for act, ent in ocdfg["activities_indep"][act_key].items():
-        data["overallActivityStats"][wrap_text(act)] = {"totalFrequency": pref_act + str(len(ent))}
+        data["overallActivityStats"][wrap_text(act)] = {
+            "totalFrequency": pref_act + str(len(ent))
+        }
 
     counter = 0
 
@@ -119,7 +142,9 @@ def apply(ocdfg: Dict[str, Any], parameters: Optional[Dict[Any, Any]] = None) ->
         list_item["headerLabel"] = wrap_text(ot)
         list_item["activities"] = []
         for act, ent in content.items():
-            list_item["activities"].append({"name": wrap_text(act), "frequency": pref_act + str(len(ent))})
+            list_item["activities"].append(
+                {"name": wrap_text(act), "frequency": pref_act + str(len(ent))}
+            )
 
         content2 = ocdfg["edges"][edge_key][ot]
         content3 = ocdfg["edges_performance"][edge_key][ot]
@@ -139,16 +164,34 @@ def apply(ocdfg: Dict[str, Any], parameters: Optional[Dict[Any, Any]] = None) ->
                 perf = sum(perf)
             else:
                 perf = mean(perf)
-            list_edges.append({"source": wrap_text(tup[0]), "target": wrap_text(tup[1]), "frequency": pref_edge + str(len(ent)),
-                               "performance": vis_utils.human_readable_stat(perf)})
+            list_edges.append(
+                {
+                    "source": wrap_text(tup[0]),
+                    "target": wrap_text(tup[1]),
+                    "frequency": pref_edge + str(len(ent)),
+                    "performance": vis_utils.human_readable_stat(perf),
+                }
+            )
 
         for act, ent in content4.items():
             list_edges.append(
-                {"source": "Start", "target": wrap_text(act), "frequency": pref_edge + str(len(ent)), "performance": vis_utils.human_readable_stat(0.0)})
+                {
+                    "source": "Start",
+                    "target": wrap_text(act),
+                    "frequency": pref_edge + str(len(ent)),
+                    "performance": vis_utils.human_readable_stat(0.0),
+                }
+            )
 
         for act, ent in content5.items():
             list_edges.append(
-                {"source": wrap_text(act), "target": "End", "frequency": pref_edge + str(len(ent)), "performance": vis_utils.human_readable_stat(0.0)})
+                {
+                    "source": wrap_text(act),
+                    "target": "End",
+                    "frequency": pref_edge + str(len(ent)),
+                    "performance": vis_utils.human_readable_stat(0.0),
+                }
+            )
 
         list_item["edges"] = list_edges
 
@@ -157,9 +200,13 @@ def apply(ocdfg: Dict[str, Any], parameters: Optional[Dict[Any, Any]] = None) ->
     stru = json.dumps(data, indent=2)
 
     if annotation == "frequency":
-        suffix = "drawGraph(data, {showFrequency: true, showPerformance: false});\n"
+        suffix = (
+            "drawGraph(data, {showFrequency: true, showPerformance: false});\n"
+        )
     else:
-        suffix = "drawGraph(data, {showFrequency: false, showPerformance: true});\n"
+        suffix = (
+            "drawGraph(data, {showFrequency: false, showPerformance: true});\n"
+        )
 
     stru = "const data = " + stru + ";\n\n" + suffix
 
@@ -188,15 +235,29 @@ def view(temp_file_name, parameters=None):
         parameters = {}
 
     if constants.DEFAULT_ENABLE_VISUALIZATIONS_VIEW:
-        iframe_width = exec_utils.get_param_value(Parameters.IFRAME_WIDTH, parameters, 900)
-        iframe_height = exec_utils.get_param_value(Parameters.IFRAME_HEIGHT, parameters, 600)
-        local_jupyter_file_name = exec_utils.get_param_value(Parameters.LOCAL_JUPYTER_FILE_NAME, parameters, "jupyter_bpmn_vis.html")
+        iframe_width = exec_utils.get_param_value(
+            Parameters.IFRAME_WIDTH, parameters, 900
+        )
+        iframe_height = exec_utils.get_param_value(
+            Parameters.IFRAME_HEIGHT, parameters, 600
+        )
+        local_jupyter_file_name = exec_utils.get_param_value(
+            Parameters.LOCAL_JUPYTER_FILE_NAME,
+            parameters,
+            "jupyter_bpmn_vis.html",
+        )
 
         if vis_utils.check_visualization_inside_jupyter():
             from IPython.display import IFrame
+
             shutil.copyfile(temp_file_name, local_jupyter_file_name)
-            iframe = IFrame(local_jupyter_file_name, width=iframe_width, height=iframe_height)
+            iframe = IFrame(
+                local_jupyter_file_name,
+                width=iframe_width,
+                height=iframe_height,
+            )
             from IPython.display import display
+
             return display(iframe)
         else:
             vis_utils.open_opsystem_image_viewer(temp_file_name)

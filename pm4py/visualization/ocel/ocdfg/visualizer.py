@@ -10,7 +10,11 @@ class Variants(Enum):
     ELKJS = elkjs
 
 
-def apply(ocdfg: Dict[str, Any], variant=Variants.CLASSIC, parameters: Optional[Dict[Any, Any]] = None) -> Digraph:
+def apply(
+    ocdfg: Dict[str, Any],
+    variant=Variants.CLASSIC,
+    parameters: Optional[Dict[Any, Any]] = None,
+) -> Digraph:
     """
     Visualizes an OC-DFG using one of the provided visualizations.
 
@@ -32,11 +36,15 @@ def apply(ocdfg: Dict[str, Any], variant=Variants.CLASSIC, parameters: Optional[
     return exec_utils.get_variant(variant).apply(ocdfg, parameters)
 
 
-def save(gviz, output_file_path: str, variant=Variants.CLASSIC, parameters=None):
+def save(
+    gviz, output_file_path: str, variant=Variants.CLASSIC, parameters=None
+):
     """
     Saves the diagram
     """
-    return exec_utils.get_variant(variant).save(gviz, output_file_path, parameters)
+    return exec_utils.get_variant(variant).save(
+        gviz, output_file_path, parameters
+    )
 
 
 def view(gviz, variant=Variants.CLASSIC, parameters=None):
