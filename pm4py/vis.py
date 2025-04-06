@@ -1152,6 +1152,7 @@ def view_ocpn(
     bgcolor: str = "white",
     rankdir: str = constants.DEFAULT_RANKDIR_GVIZ,
     graph_title: Optional[str] = None,
+    variant_str: str = "wo_decoration"
 ):
     """
     Visualizes the object-centric Petri net.
@@ -1161,6 +1162,7 @@ def view_ocpn(
     :param bgcolor: Background color (default: white)
     :param rankdir: Graph direction ("LR" or "TB")
     :param graph_title: Title of the visualization (if provided)
+    :param variant_str: Variant to be used ("wo_decoration" or "brachmann")
 
     .. code-block:: python3
 
@@ -1173,7 +1175,14 @@ def view_ocpn(
     from pm4py.visualization.ocel.ocpn import visualizer as ocpn_visualizer
 
     props = _setup_parameters(fmt, bgcolor, rankdir, graph_title)
-    gviz = ocpn_visualizer.apply(ocpn, parameters=props)
+
+    variant = (
+        ocpn_visualizer.Variants.WO_DECORATION
+        if variant_str == "wo_decoration"
+        else ocpn_visualizer.Variants.BRACHMANN
+    )
+
+    gviz = ocpn_visualizer.apply(ocpn, variant=variant, parameters=props)
     ocpn_visualizer.view(gviz)
 
 
@@ -1183,6 +1192,7 @@ def save_vis_ocpn(
     bgcolor: str = "white",
     rankdir: str = constants.DEFAULT_RANKDIR_GVIZ,
     graph_title: Optional[str] = None,
+    variant_str: str = "wo_decoration",
     **kwargs
 ):
     """
@@ -1193,6 +1203,7 @@ def save_vis_ocpn(
     :param bgcolor: Background color (default: white)
     :param rankdir: Graph direction ("LR" or "TB")
     :param graph_title: Title of the visualization (if provided)
+    :param variant_str: Variant to be used ("wo_decoration" or "brachmann")
 
     .. code-block:: python3
 
@@ -1205,7 +1216,14 @@ def save_vis_ocpn(
     from pm4py.visualization.ocel.ocpn import visualizer as ocpn_visualizer
 
     props = _setup_parameters(fmt, bgcolor, rankdir, graph_title)
-    gviz = ocpn_visualizer.apply(ocpn, parameters=props)
+
+    variant = (
+        ocpn_visualizer.Variants.WO_DECORATION
+        if variant_str == "wo_decoration"
+        else ocpn_visualizer.Variants.BRACHMANN
+    )
+
+    gviz = ocpn_visualizer.apply(ocpn, variant=variant, parameters=props)
     return ocpn_visualizer.save(gviz, file_path)
 
 
