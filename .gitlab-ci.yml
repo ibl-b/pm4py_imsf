@@ -1,12 +1,37 @@
-image: docker:git
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "integration"
+      when: always
+    - when: never
 
 stages:
   - test
-  - deploy
 
-
-# Dummy test job so that Renovate Bot sees "passing" pipelines and consequently does automatic merging
-dummy-test:
+test_scripts:
   stage: test
+  image: python:3.12
+  variables:
+    PM4PY_DEFAULT_ENABLE_VISUALIZATIONS_VIEW: "False"
+  before_script:
+    - apt-get update -y
+    - apt-get install -y graphviz
+    - pip install -r requirements_stable.txt
   script:
-    - echo "Execute tests, once they exist"
+    - cd tests
+    - python execute_tests.py
+  # If execute_tests.py returns non-zero, job fails.
+
+example_scripts:
+  stage: test
+  image: python:3.12
+  variables:
+    PM4PY_DEFAULT_ENABLE_VISUALIZATIONS_VIEW: "False"
+  before_script:
+    - apt-get update -y
+    - apt-get install -y graphviz
+    - pip install -r requirements_stable.txt
+    - pip install .
+  script:
+    - cd examples
+    - python execute_everything.py
+  # If execute_everything.py returns non-zero, job fails.
