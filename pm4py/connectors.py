@@ -278,9 +278,9 @@ def extract_ocel_outlook_mails() -> OCEL:
     dataframe = pm4py.connectors.extract_log_outlook_mails()
     return pm4py.convert_log_to_ocel(
         dataframe,
-        case_id_col="concept:name",
-        timestamp_col="time:timestamp",
-        object_attributes=["org:resource", "recipients", "topic"],
+        object_types=["case:concept:name"],
+        timestamp_column="time:timestamp",
+        additional_object_attributes={"case:concept:name": ["org:resource", "recipients", "topic"]},
     )
 
 
@@ -319,9 +319,9 @@ def extract_ocel_outlook_calendar(
     )
     return pm4py.convert_log_to_ocel(
         dataframe,
-        case_id_col="concept:name",
-        timestamp_col="time:timestamp",
-        object_attributes=["case:concept:name", "case:subject"],
+        object_types=["case:concept:name"],
+        timestamp_column="time:timestamp",
+        additional_object_attributes={"case:concept:name": ["case:concept:name", "case:subject"]},
     )
 
 
@@ -354,16 +354,16 @@ def extract_ocel_windows_events() -> OCEL:
     dataframe = pm4py.connectors.extract_log_windows_events()
     return pm4py.convert_log_to_ocel(
         dataframe,
-        case_id_col="concept:name",
-        timestamp_col="time:timestamp",
-        object_attributes=[
+        object_types="case:concept:name",
+        timestamp_column="time:timestamp",
+        additional_object_attributes={"case:concept:name": [
             "categoryString",
             "computerName",
             "eventIdentifier",
             "eventType",
             "sourceName",
             "user",
-        ],
+        ]},
     )
 
 
@@ -395,14 +395,14 @@ def extract_ocel_chrome_history(history_db_path: Optional[str] = None) -> OCEL:
     dataframe = pm4py.connectors.extract_log_chrome_history(history_db_path)
     return pm4py.convert_log_to_ocel(
         dataframe,
-        case_id_col="concept:name",
-        timestamp_col="time:timestamp",
-        object_attributes=[
+        object_types=["case:concept:name"],
+        timestamp_column="time:timestamp",
+        additional_object_attributes={"case:concept:name": [
             "case:concept:name",
             "complete_url",
             "url_wo_parameters",
             "domain",
-        ],
+        ]},
     )
 
 
@@ -436,14 +436,14 @@ def extract_ocel_firefox_history(
     dataframe = pm4py.connectors.extract_log_firefox_history(history_db_path)
     return pm4py.convert_log_to_ocel(
         dataframe,
-        case_id_col="concept:name",
-        timestamp_col="time:timestamp",
-        object_attributes=[
+        object_types=["case:concept:name"],
+        timestamp_column="time:timestamp",
+        additional_object_attributes={"case:concept:name": [
             "case:concept:name",
             "complete_url",
             "url_wo_parameters",
             "domain",
-        ],
+        ]},
     )
 
 
@@ -480,9 +480,9 @@ def extract_ocel_github(
     dataframe = pm4py.connectors.extract_log_github(owner, repo, auth_token)
     return pm4py.convert_log_to_ocel(
         dataframe,
-        case_id_col="concept:name",
-        timestamp_col="time:timestamp",
-        object_attributes=["case:concept:name", "org:resource", "case:repo"],
+        object_types=["case:concept:name"],
+        timestamp_column="time:timestamp",
+        additional_object_attributes={"case:concept:name": ["case:concept:name", "org:resource", "case:repo"]},
     )
 
 
@@ -516,9 +516,9 @@ def extract_ocel_camunda_workflow(connection_string: str) -> OCEL:
     )
     return pm4py.convert_log_to_ocel(
         dataframe,
-        case_id_col="concept:name",
-        timestamp_col="time:timestamp",
-        object_attributes=["case:concept:name", "processID", "org:resource"],
+        object_types=["case:concept:name"],
+        timestamp_column="time:timestamp",
+        additional_object_attributes={"case:concept:name": ["case:concept:name", "processID", "org:resource"]},
     )
 
 
@@ -552,9 +552,9 @@ def extract_ocel_sap_o2c(connection_string: str, prefix: str = "") -> OCEL:
     )
     return pm4py.convert_log_to_ocel(
         dataframe,
-        case_id_col="concept:name",
-        timestamp_col="time:timestamp",
-        object_attributes=["case:concept:name", "org:resource"],
+        object_types=["case:concept:name"],
+        timestamp_column="time:timestamp",
+        additional_object_attributes={"case:concept:name": ["case:concept:name", "org:resource"]},
     )
 
 
@@ -590,7 +590,7 @@ def extract_ocel_sap_accounting(
     )
     return pm4py.convert_log_to_ocel(
         dataframe,
-        case_id_col="concept:name",
-        timestamp_col="time:timestamp",
-        object_attributes=["case:concept:name", "org:resource"],
+        object_types=["case:concept:name"],
+        timestamp_column="time:timestamp",
+        additional_object_attributes={"case:concept:name": ["case:concept:name", "org:resource"]},
     )
