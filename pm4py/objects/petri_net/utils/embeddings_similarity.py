@@ -149,7 +149,10 @@ def cosine_similarity(a, b, eps=1e-10):
 def apply(net1: PetriNet, net2: PetriNet) -> float:
     """
     Computes the embeddings-based similarity between two Petri nets,
-    based on the approach
+    based on the approach described in:
+
+    Colonna, Juan G., et al. "Process mining embeddings: Learning vector representations for Petri nets." Intelligent Systems with Applications 23 (2024): 200423.
+
 
     Parameters
     ----------------
