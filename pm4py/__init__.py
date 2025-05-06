@@ -253,7 +253,8 @@ from pm4py.analysis import (
     behavioral_similarity,
     structural_similarity,
     embeddings_similarity,
-    get_activity_labels
+    get_activity_labels,
+    replace_activity_labels
 )
 from pm4py.stats import (
     get_start_activities,

@@ -659,6 +659,31 @@ def get_activity_labels(*args) -> List[str]:
     return sorted(list(labels))
 
 
+def replace_activity_labels(string_dictio, *args):
+    """
+    Replace the activity labels in the specified process model.
+    The first argument is the dictionary, i.e., {"pay": "pay compensation", "reject": "reject request"}
+    The rest is the specification of the process model
+    """
+    from pm4py.objects.powl.obj import POWL
+    from pm4py.objects.bpmn.obj import BPMN
+
+    if isinstance(args[0], POWL):
+        from pm4py.objects.powl.utils import label_replacing
+        return label_replacing.apply(args[0], string_dictio)
+    elif isinstance(args[0], ProcessTree):
+        from pm4py.objects.process_tree.utils import label_replacing
+        return label_replacing.apply(args[0], string_dictio)
+    elif isinstance(args[0], PetriNet):
+        from pm4py.objects.petri_net.utils import label_replacing
+        return label_replacing.apply(args[0], args[1], args[2], string_dictio)
+    elif isinstance(args[0], BPMN):
+        from pm4py.objects.bpmn.util import label_replacing
+        return label_replacing.apply(args[0], string_dictio)
+    else:
+        raise Exception("unsupported.")
+
+
 def __extract_models(*args) -> List[Any]:
     if len(args) < 2:
         raise Exception("Insufficient arguments provided.")
