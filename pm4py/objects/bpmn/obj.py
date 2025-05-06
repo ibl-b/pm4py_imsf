@@ -154,6 +154,9 @@ class BPMN(object):
         def get_name(self):
             return self.__name
 
+        def set_name(self, name):
+            self.__name = name
+
         def get_in_arcs(self):
             return self.__in_arcs
 
