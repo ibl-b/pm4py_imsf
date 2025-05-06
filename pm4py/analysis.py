@@ -6,6 +6,7 @@ from typing import List, Optional, Tuple, Dict, Union, Generator, Set, Any
 from pm4py.objects.log.obj import Trace, EventLog, EventStream
 from pm4py.utils import __event_log_deprecation_warning
 from pm4py.objects.petri_net.obj import PetriNet, Marking
+from pm4py.objects.process_tree.obj import ProcessTree
 from pm4py.utils import get_properties, pandas_utils, constants
 from pm4py.util.pandas_utils import check_is_pandas_dataframe, check_pandas_dataframe_columns
 
@@ -641,3 +642,130 @@ def get_enabled_transitions(
     """
     from pm4py.objects.petri_net import semantics
     return semantics.enabled_transitions(net, marking)
+
+
+def __extract_models(*args) -> List[Any]:
+    if len(args) < 2:
+        raise Exception("Insufficient arguments provided.")
+
+    counter = 0
+    lst_models = []
+
+    import pm4py
+    for i in range(2):
+        if type(args[counter]) is PetriNet:
+            net, im, fm = args[counter:counter + 3]
+            lst_models.append([net, im, fm])
+            counter += 3
+        elif isinstance(args[counter], dict):
+            dfg, sa, ea = args[counter:counter + 3]
+            net, im, fm = pm4py.convert_to_petri_net(dfg, sa, ea)
+            lst_models.append([net, im, fm])
+            counter += 3
+        else:
+            obj = args[counter]
+            lst_models.append([obj])
+            counter += 1
+
+    return lst_models
+
+
+def behavioral_similarity(*args) -> float:
+    """
+    Computes the behavioral similarity (footprints-based) between two process models.
+
+    Examples:
+    * pm4py.behavioral_similarity(petri_net, im, fm, process_tree)
+    * pm4py.behavioral_similarity(bpmn1, bpmn2)
+    * pm4py.behavioral_similarity(process_tree, powl)
+
+    Returns
+    --------------
+    similarity
+        Footprints-based behavioral similarity
+    """
+    lst_models = __extract_models(*args)
+
+    import pm4py
+    footprints = []
+    for i in range(len(lst_models)):
+        x = lst_models[i]
+        if not (isinstance(x[0], PetriNet) or isinstance(x[0], ProcessTree)):
+            x = [pm4py.convert_to_powl(*x)]
+
+        footprints.append(pm4py.discover_footprints(*x))
+
+    footprints1, footprints2 = footprints
+
+    sequence_union = footprints1["sequence"].union(footprints2["sequence"])
+    sequence_intersection = footprints1["sequence"].intersection(footprints2["sequence"])
+
+    parallel_union = footprints1["parallel"].union(footprints2["parallel"])
+    parallel_intersection = footprints1["parallel"].intersection(footprints2["parallel"])
+
+    denominator = len(sequence_union) + len(parallel_union)
+
+    if denominator == 0:
+        return 0
+    else:
+        return (len(sequence_intersection) + len(parallel_intersection)) / denominator
+
+
+def structural_similarity(*args) -> float:
+    """
+    Computes the structural similarity between two semi-block-structured process models,
+    following an approach similar to:
+
+    Dijkman, Remco, et al. "Similarity of business process models: Metrics and evaluation."
+    Information Systems 36.2 (2011): 498-516.
+
+    Examples:
+    * pm4py.structural_similarity(petri_net, im, fm, process_tree)
+    * pm4py.structural_similarity(bpmn1, bpmn2)
+    * pm4py.structural_similarity(process_tree, powl)
+
+    Returns
+    --------------
+    similarity
+        Structural similarity
+    """
+    lst_models = __extract_models(*args)
+
+    import pm4py
+    i = 0
+    while i < len(lst_models):
+        lst_models[i] = pm4py.convert_to_process_tree(pm4py.convert_to_powl(*lst_models[i]))
+        i = i + 1
+
+    from pm4py.objects.process_tree.utils import struct_similarity
+    return struct_similarity.structural_similarity(lst_models[0], lst_models[1])
+
+
+def embeddings_similarity(*args) -> float:
+    """
+    Computes the embeddings similarity between two process models,
+    following the approach described in:
+
+    Colonna, Juan G., et al. "Process mining embeddings: Learning vector representations for Petri nets."
+    Intelligent Systems with Applications 23 (2024): 200423.
+
+    Examples:
+    * pm4py.embeddings_similarity(petri_net, im, fm, process_tree)
+    * pm4py.embeddings_similarity(bpmn1, bpmn2)
+    * pm4py.embeddings_similarity(process_tree, powl)
+
+    Returns
+    --------------
+    similarity
+        Structural similarity
+    """
+    lst_models = __extract_models(*args)
+
+    import pm4py
+    i = 0
+    while i < len(lst_models):
+        lst_models[i] = pm4py.convert_to_petri_net(*lst_models[i])
+        i = i + 1
+
+    from pm4py.objects.petri_net.utils import embeddings_similarity
+    return embeddings_similarity.apply(lst_models[0][0], lst_models[1][0])
