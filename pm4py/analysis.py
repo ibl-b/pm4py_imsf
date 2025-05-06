@@ -9,6 +9,7 @@ from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.objects.process_tree.obj import ProcessTree
 from pm4py.utils import get_properties, pandas_utils, constants
 from pm4py.util.pandas_utils import check_is_pandas_dataframe, check_pandas_dataframe_columns
+from pm4py.util import labels_similarity as ls_util
 
 import pandas as pd
 import deprecation
@@ -809,3 +810,47 @@ def embeddings_similarity(*args) -> float:
 
     from pm4py.objects.petri_net.utils import embeddings_similarity
     return embeddings_similarity.apply(lst_models[0][0], lst_models[1][0])
+
+
+def label_sets_similarity(*args, threshold=0.75) -> float:
+    """
+    Computes the label sets similarity between two process models.
+
+    Examples:
+    * pm4py.labels_similarity(petri_net, im, fm, process_tree)
+    * pm4py.labels_similarity(bpmn1, bpmn2)
+    * pm4py.labels_similarity(process_tree, powl)
+
+    Returns
+    --------------
+    similarity
+        Label sets similarity
+    """
+    lst_models = __extract_models(*args)
+    labels = []
+    i = 0
+    while i < len(lst_models):
+        labels.append(get_activity_labels(*lst_models[i]))
+        i = i + 1
+
+    return ls_util.label_sets_similarity(labels[0], labels[1], threshold=threshold)
+
+
+def map_labels_from_second_model(*args, threshold=0.75):
+    """
+    Maps the labels from the second process model into the first.
+
+    Example usages:
+    * pm4py.map_labels_from_second_model(net, im, fm, process_tree)
+    * pm4py.map_labels_from_second_model(process_tree, net, im, fm)
+    * pm4py.map_labels_from_second_model(powl1, powl2)
+    """
+    lst_models = __extract_models(*args)
+    labels = []
+    i = 0
+    while i < len(lst_models):
+        labels.append(get_activity_labels(*lst_models[i]))
+        i = i + 1
+
+    label_mapping = ls_util.map_labels(labels[0], labels[1], threshold=threshold)
+    return replace_activity_labels(label_mapping, *lst_models[0])
