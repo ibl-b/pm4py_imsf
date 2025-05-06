@@ -644,6 +644,21 @@ def get_enabled_transitions(
     return semantics.enabled_transitions(net, marking)
 
 
+def get_activity_labels(*args) -> List[str]:
+    """
+    Gets the activity labels from the specified process model.
+
+    Returns
+    ---------------
+    activities
+        Activity labels
+    """
+    import pm4py
+    net, im, fm = pm4py.convert_to_petri_net(*args)
+    labels = {x.label for x in net.transitions if x.label is not None}
+    return sorted(list(labels))
+
+
 def __extract_models(*args) -> List[Any]:
     if len(args) < 2:
         raise Exception("Insufficient arguments provided.")

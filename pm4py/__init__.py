@@ -252,7 +252,8 @@ from pm4py.analysis import (
     simplicity_petri_net,
     behavioral_similarity,
     structural_similarity,
-    embeddings_similarity
+    embeddings_similarity,
+    get_activity_labels
 )
 from pm4py.stats import (
     get_start_activities,
