@@ -179,6 +179,30 @@ def cost_based_dfg():
     cost_based_dfg.execute_script()
 
 
+def bpmn_merging():
+    from examples import bpmn_merging
+    print("\n\nbpmn_merging")
+    bpmn_merging.execute_script()
+
+
+def label_replacement():
+    from examples import label_replacement
+    print("\n\nlabel_replacement")
+    label_replacement.execute_script()
+
+
+def model_to_model_sim():
+    from examples import model_to_model_sim
+    print("\n\nmodel_to_model_sim")
+    model_to_model_sim.execute_script()
+
+
+def monte_carlo_example():
+    from examples import monte_carlo_example
+    print("\n\nmonte_carlo_example")
+    monte_carlo_example.execute_script()
+
+
 def df_to_log_postpro():
     from examples import df_to_log_postpro
     print("\n\ndf_to_log_postpro")
