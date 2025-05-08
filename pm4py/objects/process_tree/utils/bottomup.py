@@ -125,7 +125,7 @@ def get_min_rem_dict(tree, parameters=None):
     return min_rem_dict
 
 
-def get_max_length_dict(node, max_length_dict, num_nodes, avoid_loops):
+def get_max_length_dict(node, max_length_dict, num_nodes, avoid_loops=False):
     """
     Populates, given the nodes of a tree in a bottom-up order, the maximum length dictionary
     (every trace generated from that point of the tree has at most length N)
