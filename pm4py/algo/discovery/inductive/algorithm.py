@@ -111,8 +111,7 @@ def apply(
             process_tree = imd.apply(IMDataStructureDFG(idfg), parameters)
         if variant is Variants.IMsfs:
             imsfs = IMSFSUVCL(parameters)
-            processed_log = IMSFSUVCL._preprocess_log(IMDataStructureUVCL(uvcl))
-            process_tree = imsfs.apply(processed_log, parameters)
+            process_tree = imsfs.apply(IMDataStructureUVCL(uvcl), parameters)
 
     process_tree = pt_util.fold(process_tree)
     tree_sort(process_tree)
