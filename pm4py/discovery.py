@@ -483,6 +483,7 @@ def discover_petri_net_inductive(
     timestamp_key: str = "time:timestamp",
     case_id_key: str = "case:concept:name",
     disable_fallthroughs: bool = False,
+    variant: Optional[str] = None,
 ) -> Tuple[PetriNet, Marking, Marking]:
     """
     Discovers a Petri net using the Inductive Miner algorithm.
@@ -497,6 +498,7 @@ def discover_petri_net_inductive(
     :param timestamp_key: Attribute to be used for the timestamp (default: "time:timestamp").
     :param case_id_key: Attribute to be used as case identifier (default: "case:concept:name").
     :param disable_fallthroughs: Disables the Inductive Miner fall-throughs (default: False).
+    :param variant: The Inductive Miner Variant zu apply. See pm4py.algo.discovery.inductive.variants for available options (default: IM).
     :return: A tuple containing the Petri net, initial marking, and final marking.
     :rtype: ``Tuple[PetriNet, Marking, Marking]``
 
@@ -529,9 +531,15 @@ def discover_petri_net_inductive(
         timestamp_key=timestamp_key,
         case_id_key=case_id_key,
         disable_fallthroughs=disable_fallthroughs,
+        variant=variant
     )
-    from pm4py.convert import convert_to_petri_net
 
+    if variant and variant.strip().upper() == "IMSFS":
+        from pm4py.algo.discovery.inductive.variants import imsfs
+        return imsfs.IMSFS.convert_to_petri_net(pt)
+
+    from pm4py.convert import convert_to_petri_net
+  
     return convert_to_petri_net(pt)
 
 
@@ -606,6 +614,7 @@ def discover_process_tree_inductive(
     timestamp_key: str = "time:timestamp",
     case_id_key: str = "case:concept:name",
     disable_fallthroughs: bool = False,
+    variant: Optional[str] = None,
 ) -> ProcessTree:
     """
     Discovers a Process Tree using the Inductive Miner algorithm.
@@ -620,6 +629,7 @@ def discover_process_tree_inductive(
     :param timestamp_key: Attribute to be used for the timestamp (default: "time:timestamp").
     :param case_id_key: Attribute to be used as case identifier (default: "case:concept:name").
     :param disable_fallthroughs: Disables the Inductive Miner fall-throughs (default: False).
+    :param variant: The Inductive Miner Variant zu apply. See pm4py.algo.discovery.inductive.variants for available options (default: IM).
     :return: A ProcessTree object.
     :rtype: ``ProcessTree``
 
@@ -656,17 +666,25 @@ def discover_process_tree_inductive(
     parameters["multiprocessing"] = multi_processing
     parameters["disable_fallthroughs"] = disable_fallthroughs
 
-    # variant = inductive_miner.Variants.IMf if noise_threshold > 0 else inductive_miner.Variants.IM
-    # TODO variant als optionalen Parameter übergeben (mit IM als standard)
-    variant = (
-        inductive_miner.Variants.IMsfs
-        if noise_threshold > 0
-        else inductive_miner.Variants.IM
-    )
+    from pm4py.algo.discovery.inductive import variants as inductive_variants
+    from pm4py.algo.discovery.inductive.variants.instances import IMInstance
 
-    if isinstance(log, DFG):
-        variant = inductive_miner.Variants.IMd
+    if variant is not None:
+        variant_lower = variant.lower()
+        matched_name = next((name for name in inductive_miner.Variants.__members__ if name.lower() == variant_lower), None)
+        if matched_name:
+            variant = inductive_miner.Variants[matched_name]
+        else:
+            raise ValueError(f"Ungültige Inductive Miner Variante: {variant}")
 
+    else: 
+        if isinstance(log, DFG):
+            variant = inductive_miner.Variants.IMd
+        elif noise_threshold > 0:
+            variant = inductive_miner.Variants.IMf
+        else:
+            variant = inductive_miner.Variants.IM
+        
     return inductive_miner.apply(log, variant=variant, parameters=parameters)
 
 
