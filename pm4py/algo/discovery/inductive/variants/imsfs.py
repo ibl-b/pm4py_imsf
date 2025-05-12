@@ -26,7 +26,7 @@ from pm4py.algo.discovery.inductive.dtypes.im_ds import (
     IMDataStructureUVCL,
     IMDataStructureLog,
 )
-from pm4py.algo.discovery.inductive.fall_through.synthesis import SynthesisUVCL
+
 from pm4py.algo.discovery.inductive.variants.abc import InductiveMinerFramework
 from pm4py.algo.discovery.inductive.variants.instances import IMInstance
 from pm4py.objects.process_tree.obj import ProcessTree
@@ -35,7 +35,7 @@ from pm4py.algo.discovery.inductive.fall_through.empty_traces import EmptyTraces
 from pm4py.objects.conversion.process_tree import converter as process_tree_converter
 from pm4py.objects.process_tree.utils import generic as pt_utils
 from pm4py.objects.petri_net.utils import petri_utils
-
+from pm4py.objects.petri_net.utils import final_marking as fm
 from pm4py import vis
 from copy import copy
 
@@ -47,47 +47,8 @@ class IMSFS(Generic[T], InductiveMinerFramework[T]):
 
     def instance(self) -> IMInstance:
         return IMInstance.IMsfs
-
-
-class IMSFSUVCL(IMSFS[IMDataStructureUVCL]):
-
-    # TODO später erst prüfen, ob es schon start und Ende hat
-    def _preprocess_log(obj: IMDataStructureUVCL) -> IMDataStructureUVCL:
-        traces = obj.data_structure
-        first_element = next(iter(traces.keys()))[0]
-        if first_element == "Start":
-            return obj
-        new_traces = Counter()
-        for trace, count in traces.items():
-            new_trace = ("Start",) + trace + ("Stop",)
-            new_traces[new_trace] = count
-
-        return IMDataStructureUVCL(new_traces)
-
-    def apply(
-        self,
-        obj: IMDataStructureUVCL,
-        parameters: Optional[Dict[str, Any]] = None,
-        second_iteration: bool = False,
-    ) -> ProcessTree:
-
-        empty_traces = EmptyTracesUVCL.apply(obj, parameters)
-        if empty_traces is not None:
-            return self._recurse(empty_traces[0], empty_traces[1], parameters)
-        tree = self.apply_base_cases(obj, parameters)
-        if tree is None:
-            cut = self.find_cut(obj, parameters)
-            if cut is not None:
-                tree = self._recurse(cut[0], cut[1], parameters=parameters)
-        if tree is None:
-            ft = self.fall_through(obj, parameters)
-            if isinstance(ft, ProcessTree):
-                return ft
-            tree = self._recurse(ft[0], ft[1], parameters=parameters)
-            
-        return tree
     
-    def convert_process_tree(tree: ProcessTree) -> Tuple[PetriNet, Marking, Marking]:
+    def convert_to_petri_net(tree: ProcessTree) -> Tuple[PetriNet, Marking, Marking]:
         net, initial_marking, final_marking = process_tree_converter.apply(tree)
         leaves = pt_utils.get_leaves(tree)
         synth_nets = {}
@@ -108,27 +69,27 @@ class IMSFSUVCL(IMSFS[IMDataStructureUVCL]):
                 net = IMSFSUVCL._replace_placeholder_with_synth_net(net, placeholder, synth_net, synth_im, initial_marking)
 
         net = petri_utils.remove_unconnected_components(net)
-        vis.view_petri_net(net, initial_marking, final_marking, format="svg")  
-        return net, initial_marking, final_marking   
+        #vis.view_petri_net(net, initial_marking, final_marking, format="svg")  
+        updated_fm = fm.discover_final_marking(net)
+        return net, initial_marking, updated_fm   
 
     def _replace_placeholder_with_synth_net(net:PetriNet, net_placeholder: PetriNet.Transition, synth_net: PetriNet, synth_im: Marking, initial_marking: Marking) -> PetriNet:
         synth_start = None
         synth_stop = None
         for t in synth_net.transitions:
-            if t.label == "Start":
+            if t.name == "Start":
                 synth_start = t
-            if t.label == "Stop":
+            if t.name == "Stop":
                 synth_stop = t
 
         if not synth_start or not synth_stop:
-            return net  # Falls kein gültiges Synthesenetz, breche ab
+            return net  
 
-        # Füge das Synthesenetz in das Hauptnetz ein
         net.transitions.update(synth_net.transitions)
         net.places.update(synth_net.places)
         net.arcs.update(synth_net.arcs)
 
-        vis.view_petri_net(net, initial_marking, Marking(), format="svg")
+        #vis.view_petri_net(net, initial_marking, Marking(), format="svg")
 
         synth_source_arcs = copy(synth_start.in_arcs)
         synth_sink_arcs = copy(synth_stop.out_arcs)
@@ -144,50 +105,69 @@ class IMSFSUVCL(IMSFS[IMDataStructureUVCL]):
             net = petri_utils.remove_arc(net, arc)
             net = petri_utils.remove_place(net, place)
 
-        vis.view_petri_net(net, initial_marking, Marking(), format="svg")
+        #vis.view_petri_net(net, initial_marking, Marking(), format="svg")
 
         net = IMSFSUVCL._connect_nets(net, net_placeholder, synth_start, synth_stop)
 
-        # Übernehme initiale Markierung
         for place, count in synth_im.items():
             initial_marking[place] = count
 
-        vis.view_petri_net(net, initial_marking, Marking(), format="svg")
+        #vis.view_petri_net(net, initial_marking, Marking(), format="svg")
 
         return net
-
-
 
 
     def _connect_nets(net: PetriNet, net_placeholder: PetriNet.Transition, synth_start: PetriNet.Transition, synth_stop: PetriNet.Transition) -> PetriNet:
         
         arcs_to_remove = []
-        silent_synth_start = petri_utils.add_transition(net, "silent_synth_start", None)
-        silent_synth_stop = petri_utils.add_transition(net, "silent_synth_stop", None)
+        #silent_synth_start = petri_utils.add_transition(net, "silent_synth_start", None)
+        #silent_synth_stop = petri_utils.add_transition(net, "silent_synth_stop", None)
 
         # connect net with start of the synthesized net
         for arc in net_placeholder.in_arcs:
             source = arc.source
             arcs_to_remove.append(arc)
-            petri_utils.add_arc_from_to(fr=source, to=silent_synth_start, net=net)
-        for arc in synth_start.out_arcs:
-            target = arc.target
-            arcs_to_remove.append(arc)
-            petri_utils.add_arc_from_to(fr=silent_synth_start, to=target, net=net)
+            petri_utils.add_arc_from_to(fr=source, to=synth_start, net=net)
+        #for arc in synth_start.out_arcs:
+            #target = arc.target
+            #arcs_to_remove.append(arc)
+            #petri_utils.add_arc_from_to(fr=synth_start, to=target, net=net)
         
         # connect end of the synthesized net with net
         for arc in net_placeholder.out_arcs:
             target = arc.target
             arcs_to_remove.append(arc)
-            petri_utils.add_arc_from_to(fr=silent_synth_stop, to=target, net=net)
-        for arc in synth_stop.in_arcs:
-            source = arc.source
-            arcs_to_remove.append(arc)
-            petri_utils.add_arc_from_to(fr=source, to=silent_synth_stop, net=net)
+            petri_utils.add_arc_from_to(fr=synth_stop, to=target, net=net)
+        #for arc in synth_stop.in_arcs:
+            #source = arc.source
+            #arcs_to_remove.append(arc)
+            #petri_utils.add_arc_from_to(fr=source, to=silent_synth_stop, net=net)
 
         for arc in arcs_to_remove:
             petri_utils.remove_arc(net, arc)
         
         return net
 
+
+class IMSFSUVCL(IMSFS[IMDataStructureUVCL]):
+
+    def apply(
+        self,
+        obj: IMDataStructureUVCL,
+        parameters: Optional[Dict[str, Any]] = None,
+    ) -> ProcessTree:
+
+        empty_traces = EmptyTracesUVCL.apply(obj, parameters)
+        if empty_traces is not None:
+            return self._recurse(empty_traces[0], empty_traces[1], parameters)
+        tree = self.apply_base_cases(obj, parameters)
+        if tree is None:
+            cut = self.find_cut(obj, parameters)
+            if cut is not None:
+                tree = self._recurse(cut[0], cut[1], parameters=parameters)
+        if tree is None:
+            ft = self.fall_through(obj, parameters)
+            tree = self._recurse(ft[0], ft[1], parameters=parameters)
+            
+        return tree
 
