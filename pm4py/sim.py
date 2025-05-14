@@ -95,6 +95,12 @@ def play_out(
             from pm4py.algo.simulation.playout.process_tree import algorithm
 
             return algorithm.apply(args[0], **kwargs)
+        elif isinstance(args[0], dict):
+            if "precedence" in args[0]:
+                from pm4py.algo.simulation.playout.declare import algorithm
+
+                return algorithm.apply(args[0], **kwargs)
+
     raise Exception("Unsupported model for playout")
 
 
