@@ -47,6 +47,8 @@ from pm4py.objects.conversion.log import converter as log_converter
 from datetime import datetime, timedelta
 from pm4py.objects.log.exporter.xes import exporter as xes_exporter
 
+from pm4py.objects.conversion.process_tree import converter as process_tree_converter
+
 class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
 
     """
@@ -105,17 +107,16 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
 
         return IMDataStructureUVCL(new_traces)
 
-    def _get_token_trails(
+    def _init_linear_nets(
         obj: IMDataStructureUVCL
     ) -> Tuple[List[Dict[str, Any]], List[int], List[int], int]:
         """
-        Calculates the linear token trail for each trace in the given log.
+        Calculates the linear net for each trace in the given log as base for calculating valid token trails.
         This function creates a single list of entries, where each entry corresponds to an activity 
         and contains the following information:
             - the `activity` being executed,
             - the `token_places` before and after the activity.
 
-        The concept of token trails used in this implementation is described here: [Source]
         
         :param obj: UVCL datastructure representing the given log.
         :return: A list of dictionaries (List[Dict[str, any]]), containing every activity in each trace of the log with the corresponding token place numbers before and after the activity. 
@@ -123,7 +124,7 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         :return: A list of place numbers (List[int]) representing the final place for each token trail.
         :return: The total number of token places.
         """
-        token_trails = []
+        linear_nets = []
         initial_token_places = []
         final_token_places = []
 
@@ -137,7 +138,7 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
 
             for activity in trace:
                 current_place += 1
-                token_trails.append(
+                linear_nets.append(
                     {
                         "token_places": [start_place, current_place],
                         "activity": activity,
@@ -149,29 +150,29 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
             current_place += 1
 
         return (
-            token_trails,
+            linear_nets,
             initial_token_places,
             final_token_places,
             current_place,
         )
 
     def _get_rise_places(
-        token_trails: List[Dict[str, Any]]
+        linear_nets: List[Dict[str, Any]]
     ) -> Dict[str, List[Tuple[int, int]]]:
         """
         Calculates the rise places as a basis for the rise equations.
         To ensure equal rise for every activity, the entries in the token trails list are grouped by activity,
         mapping each activity to a list of (start_place, end_place) tuples.
         
-        :param token trails: A list of dictionaries, each containing an "activity" and its corresponding 
+        :param linear_nets: A list of dictionaries, each containing an "activity" and its corresponding 
                      "token_places" (start and end place).  
         :return: A dictionary mapping each activity to a list of tuples (start_place, end_place)
         """
         rise_places = defaultdict(list)
 
-        for trail_part in token_trails:
-            activity = trail_part["activity"]
-            start_place, end_place = trail_part["token_places"]
+        for net_part in linear_nets:
+            activity = net_part["activity"]
+            start_place, end_place = net_part["token_places"]
             rise_places[activity].append((start_place, end_place))
 
         return rise_places
@@ -204,7 +205,7 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
 
 
     def _solve_ilp_problem(
-        token_trails: List[Dict[str, Any]],
+        linear_nets: List[Dict[str, Any]],
         initial_places: List[int],
         final_places: List[int],
         num_places: int,
@@ -223,7 +224,7 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         The constraints are based on [source]. Additional constraints are added to ensure the resulting net is a 
         workflow net.
         
-        :param token_trails: A list of dictionaries (List[Dict[str, any]]), containing every activity in each trace of the log with the corresponding token place numbers before and after the activity 
+        :param linear_nets: A list of dictionaries (List[Dict[str, any]]), containing every activity in each trace of the log with the corresponding token place numbers before and after the activity 
         :param initial_places: A list of place numbers representing the initial place for each token trail.
         :param final_places: A list of place numbers representing the final place for each token trail.
         :param num_places: The total number of token places.
@@ -242,7 +243,7 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
             problem, place_vars, initial_places, final_places, create_wf
         )
 
-        rise_places = SynthesisUVCL._get_rise_places(token_trails)
+        rise_places = SynthesisUVCL._get_rise_places(linear_nets)
         SynthesisUVCL._add_rise_constraints(problem, place_vars, rise_places, create_wf)
 
         solutions = defaultdict(list)
@@ -430,19 +431,6 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
 
         problem += (new_vars >= 1, f"Exclude_Solution_{solution_no}",)
 
-        #TODO big M Variante prüfen mit deviation <= k* x und -deviation <= k*x
-        #klassische Formulierung aus dem Region-Based ILP-Mining-Ansatz (z. B. von van Zelst et al. oder ähnlichen Arbeiten)
-
-        #non_zero_var_count = 0
-        #new_constraint = 0
-        #for var in problem.variables():
-            #if var.varValue != 0:
-                #new_constraint += int(var.varValue)*var
-                #non_zero_var_count += int(var.varValue)
-        #problem += (
-            #new_constraint <= non_zero_var_count - 1,
-            #f"Prohibit token trail greater than solution {solution_no}",
-        #)  
 
     def _get_net_places_from_ilp_solution(
         solutions: defaultdict, rise_places: Dict[str, List[Tuple[int, int]]]
@@ -693,6 +681,7 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         #SynthesisUVCL.uvcl_to_eventlog_from_sequences(obj.data_structure)
         #xes_exporter.apply(log, "teillog.xes")
         obj_with_ss = SynthesisUVCL._set_start_and_end(obj)
+        #obj_with_ss = obj
         # optional: filter traces if the resulting net is not satisfying. 
         filtered_obj = SynthesisUVCL._filter_traces(obj_with_ss, 0.00) 
         #SynthesisUVCL.uvcl_to_eventlog_from_sequences(filtered_obj.data_structure)
@@ -702,23 +691,23 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         create_wf = True
 
         (
-            token_trails,
+            linear_nets,
             initial_places,
             final_places,
             num_places,
-        ) = SynthesisUVCL._get_token_trails(filtered_obj)
+        ) = SynthesisUVCL._init_linear_nets(filtered_obj)
  
         # if using filter, you could try initing the net with obj_with_ss, so every activity of the original object will 
         # be part of the resulting net (activities that are filtered will be modelled in parallel or as part of a flower model)
         net, im, fm = SynthesisUVCL._init_net(obj_with_ss)
 
         net_places = SynthesisUVCL._solve_ilp_problem(
-            token_trails, initial_places, final_places, num_places, create_wf
+            linear_nets, initial_places, final_places, num_places, create_wf
         )
 
         net, im, fm = SynthesisUVCL._insert_net_places(net, im, fm, net_places)
 
-        #vis.view_petri_net(net, im, fm, format="svg")
+        vis.view_petri_net(net, im, fm, format="svg")
 
         workflow_net, im, fm = SynthesisUVCL._create_wf_net(net, im, fm)
 
@@ -730,9 +719,10 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
             #workflow_net,
             #im,
             #fm,
-        #) 
+            #) 
         #except:
         pt = PlaceholderTree(workflow_net, im, fm)
+        
 
         return pt, []
     

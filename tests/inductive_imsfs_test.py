@@ -19,16 +19,16 @@ from pm4py.objects.petri_net.utils import petri_utils
 
 class IMSFSTest(unittest.TestCase):
     #log = "LisaB_Testlogs/25-04-10/roadtraffic_FT_oSTFT_0.001.xes"
-    log = "LisaB_Testlogs/BPIC15_2.xes"
+    log = "LisaB_Testlogs/BPI2019_C.xes"
     
 
     def test_compare_imf(self, log_name=log):
         # to avoid static method warnings in tests,
         # that by construction of the unittest package have to be expressed in such way
         self.dummy_variable = "dummy_value"
-        log = xes_importer.apply(log_name)
+        #log = xes_importer.apply(log_name)
         #start = time.time()
-        net, initial_marking, final_marking = pm4py.discovery.discover_petri_net_inductive(log, variant="im")
+        #net, initial_marking, final_marking = pm4py.discovery.discover_petri_net_inductive(log, variant="im")
         #end = time.time()
         #print(f"Laufzeit IM: {end - start:.3f} Sekunden")
         #vis.view_petri_net(net, initial_marking, final_marking, format="svg")
@@ -39,44 +39,50 @@ class IMSFSTest(unittest.TestCase):
         # to avoid static method warnings in tests,
         # that by construction of the unittest package have to be expressed in such way
         self.dummy_variable = "dummy_value"
-        #log = xes_importer.apply(log_name)
+        log = xes_importer.apply(log_name)
         #start = time.time()
-        #net, initial_marking, final_marking = pm4py.discovery.discover_petri_net_inductive(log, disable_fallthroughs=False, variant="IMSFS")
+        net, initial_marking, final_marking = pm4py.discovery.discover_petri_net_inductive(log, disable_fallthroughs=False, variant="IMSFS")
         #end = time.time()
         #print(f"Laufzeit IMSFS: {end - start:.3f} Sekunden")
 
-        #vis.view_petri_net(net, initial_marking, final_marking, format="svg")
+        vis.view_petri_net(net, initial_marking, final_marking, format="svg")
         #pm4py.write_pnml(net, initial_marking, final_marking, "bpi2020DD_IMSFS.pnml")
         
 
     def test_net(self, log_name=log):
         self.dummy_variable = "dummy_value"
-        #log_name_im = "LisaB_Testlogs/25-04-10/roadtraffic_oSTFT_FT.xes"
-        #log_name_imsfs = "LisaB_Testlogs/25-04-10/roadtraffic_IMSFS_synth_0.001.xes"
-        #file = "LisaB_Testlogs/25-04-10/roadtraffic_IM_FT_oSTFT_0.001.pnml"
-        #file_imsfs = "LisaB_Testlogs/25-04-10/BPI2020DD_IMSFS_komplett_0.001.pnml"
-        #file_imsfs_f = "LisaB_Testlogs/25-03-31_Netze/roadtraffic_synth_komplett_0.001f.pnml"
-        #log_im = xes_importer.apply(log_name)
+        log_name_im = "LisaB_Testlogs/25-04-10/bpi2012o_IM_FT.xes"
+        file = "LisaB_Testlogs/25-04-10/bpi2012o_IM_FT.pnml"
+        file_imsfs = "LisaB_Testlogs/25-04-10/bpi2012o_IMSFS_synth.pnml"
+        file_imsfs_f = "LisaB_Testlogs/25-04-10/bpi2012o_IMSFS_synth_kein_WF.pnml"
+        log_im = xes_importer.apply(log_name_im)
         #log_imsfs = xes_importer.apply(log_name_im)
         #log = xes_importer.apply(log_name)
         
-        #net, im, fm = pm4py.read_pnml(file)
-        #inet, iim, ifm = pm4py.read_pnml(file_imsfs)
-        #vis.view_petri_net(inet, iim, ifm, format="svg")
-        #vis.view_petri_net(net, im, fm, format="svg")
+        net, im, fm = pm4py.read_pnml(file)
+        inet, iim, ifm = pm4py.read_pnml(file_imsfs)
+        wfnet, wfim, wffm = pm4py.read_pnml(file_imsfs_f)
+        vis.view_petri_net(inet, iim, ifm, format="svg")
+        vis.view_petri_net(net, im, fm, format="svg")
+        vis.view_petri_net(wfnet, wfim, wffm, format="svg")
+
 
         #results = pm4py.conformance.fitness_token_based_replay(log_im, net, im, fm)
         #results = pm4py.conformance.conformance_diagnostics_token_based_replay(log_im, net, iim, ifm)
-        #results_p = pm4py.conformance.precision_token_based_replay(log_im, net, im, fm)
-        #results_gen = pm4py.conformance.generalization_tbr(log_im, net, im, fm)
+        results_p = pm4py.conformance.precision_token_based_replay(log_im, net, im, fm)
+        results_gen = pm4py.conformance.generalization_tbr(log_im, net, im, fm)
+        results_gen1 = pm4py.conformance.generalization_tbr(log_im, inet, iim, ifm)
+        results_gen2 = pm4py.conformance.generalization_tbr(log_im, wfnet, wfim, wffm)
         #alignment_result = pm4py.conformance.fitness_alignments(log_im, net, im, fm)
         #alignment_result_p = pm4py.conformance.precision_alignments(log_im, net, im, fm)
         #results_cyc = simplicity_evaluator.apply(net, variant=simplicity_evaluator.Variants.EXTENDED_CYCLOMATIC)
         #alignment_arc = simplicity_evaluator.apply(net, variant=simplicity_evaluator.Variants.SIMPLICITY_ARC_DEGREE)
         #alignment_ec = simplicity_evaluator.apply(net, variant=simplicity_evaluator.Variants.EXTENDED_CARDOSO)
         #print(f"fit tb im: {results}")
-        #print(f"prec tb im: {results_p}")
-        #print(f"Gen: {results_gen}")
+        print(f"prec tb im: {results_p}")
+        print(f"Gen: {results_gen}")
+        print(f"Gen: {results_gen1}")
+        print(f"Gen: {results_gen2}")
         #print(f"prec_alig: {alignment_result_p}")
         #print(f"simp cyc: {results_cyc}")
         #print(f"simp arc: {alignment_arc}")
@@ -85,7 +91,8 @@ class IMSFSTest(unittest.TestCase):
         #imsfsnet, iim, ifm = pm4py.read_pnml(file_imsfs)
         #result = pm4py.conformance.conformance_diagnostics_token_based_replay(log, imsfsnet, iim, ifm)
         #imsfsnet_f, iimf, ifmf = pm4py.read_pnml(file_imsfs_f)
-        #imsfsresults = pm4py.conformance.precision_token_based_replay(log_im, inet, iim, ifm)
+        imsfsresults = pm4py.conformance.precision_token_based_replay(log_im, inet, iim, ifm)
+        imsfsresultswf = pm4py.conformance.precision_token_based_replay(log_im,  wfnet, wfim, wffm)
         #imsfsresults_f = pm4py.conformance.precision_token_based_replay(log, imsfsnet_f, iimf, ifmf)
         #imsfsresults_f = pm4py.conformance.fitness_token_based_replay(log_im, inet, iim, ifm)
         #ialignment_result = pm4py.conformance.fitness_alignments(log_im, inet, iim, ifm)
@@ -100,7 +107,8 @@ class IMSFSTest(unittest.TestCase):
         #imsfsresults_simp = simplicity_evaluator.apply(inet, variant=simplicity_evaluator.Variants.SIMPLICITY_ARC_DEGREE)
         #ialignment_result_f = simplicity_evaluator.apply(imsfsnet_f, variant=simplicity_evaluator.Variants.EXTENDED_CARDOSO)
         #detailed = pm4py.conformance.conformance_diagnostics_token_based_replay(log, imsfsnet, iim, ifm)
-        #print(f"Prec TB synth ohne ss: {imsfsresults}")
+        print(f"Prec TB synth ohne ss: {imsfsresults}")
+        print(f"Prec TB synth kein wf: {imsfsresultswf}")
         #print(f"Fitness TB : {imsfsresults_f}")
         #print(f"Fitness Alig  : {ialignment_result}")
         #print(f"Precision Alig : {ialignment_result_f}")

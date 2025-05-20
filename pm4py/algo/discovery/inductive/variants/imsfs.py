@@ -160,14 +160,7 @@ class IMSFSUVCL(IMSFS[IMDataStructureUVCL]):
         empty_traces = EmptyTracesUVCL.apply(obj, parameters)
         if empty_traces is not None:
             return self._recurse(empty_traces[0], empty_traces[1], parameters)
-        tree = self.apply_base_cases(obj, parameters)
-        if tree is None:
-            cut = self.find_cut(obj, parameters)
-            if cut is not None:
-                tree = self._recurse(cut[0], cut[1], parameters=parameters)
-        if tree is None:
-            ft = self.fall_through(obj, parameters)
-            tree = self._recurse(ft[0], ft[1], parameters=parameters)
+        return super().apply(obj, parameters)
             
-        return tree
+        
 
