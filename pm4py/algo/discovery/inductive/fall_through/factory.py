@@ -67,7 +67,7 @@ class FallThroughFactory:
             else:
                 return [EmptyTracesDFG, FlowerModelDFG]
             
-        if inst is IMInstance.IMsfs:
+        if inst is IMInstance.IMsf:
             if disable_fallthroughs:
                 return [EmptyTracesUVCL, SynthesisUVCL]
             else:

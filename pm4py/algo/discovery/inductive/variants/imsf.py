@@ -43,10 +43,10 @@ from copy import copy
 T = TypeVar("T", bound=IMDataStructureLog)
 
 
-class IMSFS(Generic[T], InductiveMinerFramework[T]):
+class IMSF(Generic[T], InductiveMinerFramework[T]):
 
     def instance(self) -> IMInstance:
-        return IMInstance.IMsfs
+        return IMInstance.IMsf
     
     def convert_to_petri_net(tree: ProcessTree) -> Tuple[PetriNet, Marking, Marking]:
         net, initial_marking, final_marking = process_tree_converter.apply(tree)
@@ -66,7 +66,7 @@ class IMSFS(Generic[T], InductiveMinerFramework[T]):
             placeholder_id = placeholder.label.split("_")[-1]
             if placeholder_id in synth_nets:
                 synth_net, synth_im = synth_nets[placeholder_id]
-                net = IMSFSUVCL._replace_placeholder_with_synth_net(net, placeholder, synth_net, synth_im, initial_marking)
+                net = IMSFUVCL._replace_placeholder_with_synth_net(net, placeholder, synth_net, synth_im, initial_marking)
 
         net = petri_utils.remove_unconnected_components(net)
         #vis.view_petri_net(net, initial_marking, final_marking, format="svg")  
@@ -107,7 +107,7 @@ class IMSFS(Generic[T], InductiveMinerFramework[T]):
 
         #vis.view_petri_net(net, initial_marking, Marking(), format="svg")
 
-        net = IMSFSUVCL._connect_nets(net, net_placeholder, synth_start, synth_stop)
+        net = IMSFUVCL._connect_nets(net, net_placeholder, synth_start, synth_stop)
 
         for place, count in synth_im.items():
             initial_marking[place] = count
@@ -149,7 +149,7 @@ class IMSFS(Generic[T], InductiveMinerFramework[T]):
         return net
 
 
-class IMSFSUVCL(IMSFS[IMDataStructureUVCL]):
+class IMSFUVCL(IMSF[IMDataStructureUVCL]):
 
     def apply(
         self,

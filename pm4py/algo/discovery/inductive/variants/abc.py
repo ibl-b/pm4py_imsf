@@ -32,6 +32,10 @@ from pm4py.objects.process_tree.obj import ProcessTree
 from enum import Enum
 from pm4py.util import exec_utils, constants
 
+from pm4py.objects.conversion.process_tree import converter as process_tree_converter
+from pm4py import vis
+
+import pm4py 
 
 T = TypeVar('T', bound=IMDataStructure)
 
@@ -91,6 +95,9 @@ class InductiveMinerFramework(ABC, Generic[T]):
         for c in children:
             c.parent = tree
         tree.children.extend(children)
+        net, initial_marking, final_marking = process_tree_converter.apply(tree)
+        #vis.view_petri_net(net, initial_marking, final_marking, format="svg")
+        #pm4py.write_pnml(net, initial_marking, final_marking, "2012_olog_im.pnml")  
         return tree
 
     @abstractmethod

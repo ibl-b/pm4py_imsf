@@ -27,4 +27,4 @@ class IMInstance(Enum):
     IM = auto()
     IMd = auto()
     IMf = auto()
-    IMsfs = auto()
+    IMsf = auto()

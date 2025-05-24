@@ -34,7 +34,7 @@ from pm4py.algo.discovery.inductive.dtypes.im_ds import (
 from pm4py.algo.discovery.inductive.variants.im import IMUVCL
 from pm4py.algo.discovery.inductive.variants.imf import IMFUVCL
 from pm4py.algo.discovery.inductive.variants.imd import IMD
-from pm4py.algo.discovery.inductive.variants.imsfs import IMSFSUVCL
+from pm4py.algo.discovery.inductive.variants.imsf import IMSFUVCL
 from pm4py.algo.discovery.inductive.variants.instances import IMInstance
 from pm4py.objects.dfg.obj import DFG
 from pm4py.objects.log.obj import EventLog
@@ -59,7 +59,7 @@ class Variants(Enum):
     IM = IMInstance.IM
     IMf = IMInstance.IMf
     IMd = IMInstance.IMd
-    IMsfs = IMInstance.IMsfs
+    IMsf = IMInstance.IMsf
 
 
 def apply(
@@ -109,9 +109,9 @@ def apply(
             imd = IMD(parameters)
             idfg = InductiveDFG(dfg=comut.discover_dfg_uvcl(uvcl), skip=() in uvcl)
             process_tree = imd.apply(IMDataStructureDFG(idfg), parameters)
-        if variant is Variants.IMsfs:
-            imsfs = IMSFSUVCL(parameters)
-            process_tree = imsfs.apply(IMDataStructureUVCL(uvcl), parameters)
+        if variant is Variants.IMsf:
+            imsf = IMSFUVCL(parameters)
+            process_tree = imsf.apply(IMDataStructureUVCL(uvcl), parameters)
 
     process_tree = pt_util.fold(process_tree)
     tree_sort(process_tree)

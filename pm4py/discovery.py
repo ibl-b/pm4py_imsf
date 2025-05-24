@@ -534,9 +534,9 @@ def discover_petri_net_inductive(
         variant=variant
     )
 
-    if variant and variant.strip().upper() == "IMSFS":
-        from pm4py.algo.discovery.inductive.variants import imsfs
-        return imsfs.IMSFS.convert_to_petri_net(pt)
+    if variant and variant.strip().upper() == "IMSF":
+        from pm4py.algo.discovery.inductive.variants import imsf
+        return imsf.IMSF.convert_to_petri_net(pt)
 
     from pm4py.convert import convert_to_petri_net
   
