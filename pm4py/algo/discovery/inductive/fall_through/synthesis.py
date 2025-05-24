@@ -31,9 +31,11 @@ from pm4py import vis
 from copy import deepcopy
 from typing import Optional, Tuple, List, Dict, Any, Counter
 from collections import defaultdict
+from itertools import combinations
 from pulp import LpProblem, LpMinimize, LpVariable, lpSum, LpStatus
 import numpy as np
 import uuid 
+
 
 #TODO später löschen, da eigene Methode
 from pm4py.convert import convert_to_process_tree
@@ -497,18 +499,64 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
                     filtered_net_places[solution] = data
         net_places = filtered_net_places
 
-        # detect potential loops
-        previous_activity, previous_place = None, None
-        for activity, place in sorted(net_places[solution]["potential_loop"], key=lambda x: x[1]):
-            if previous_activity == activity and place == previous_place + 1:
-                existing_in = [a for a, _ in net_places[solution]["edges_in"]]
-                existing_out = [a for a, _ in net_places[solution]["edges_out"]]
-                if activity not in existing_in:
-                    net_places[solution]["edges_in"].append((activity, 1))
-                if activity not in existing_out:
-                    net_places[solution]["edges_out"].append((activity, 1))
+        # detect potential short loops
+        inserted_short_loops = defaultdict(list)
+        # activities already reachable in the net shall be ignored
+        already_connected = set(activity for data in net_places.values() for activity, _ in data["edges_in"])
+        for solution in net_places:
+            previous_activity, previous_place = None, None
+            in_sequence = False
+            in_first_loop = False
+            short_loop_start_candidate = None
+            potential_loop = sorted(net_places[solution]["potential_loop"], key=lambda x: x[1])
+
+            # searches for short loops that appear at the beginning of a sequence
+            for activity, place in potential_loop:
+                if previous_activity is not None and place - previous_place == 1:
+                    if not in_sequence:
+                        in_sequence = True
+                        short_loop_start_candidate = previous_activity
+                        in_first_loop = True
+                    if activity == short_loop_start_candidate and in_first_loop:
+                            existing_in = [a for a, _ in net_places[solution]["edges_in"]]
+                            existing_out = [a for a, _ in net_places[solution]["edges_out"]]
+
+                            if activity not in already_connected:
+                                if activity not in existing_in:
+                                    net_places[solution]["edges_in"].append((activity, 1))
+                                    inserted_short_loops[activity].append(solution)
+                                if activity not in existing_out:
+                                    net_places[solution]["edges_out"].append((activity, 1))
+                    else:
+                        in_first_loop = False
                     
-            previous_activity, previous_place = activity, place
+                    previous_activity, previous_place = activity, place
+                        
+                else:
+                    in_sequence = False
+                    previous_activity, previous_place = activity, place
+                
+
+        # check if there where double short loop insertions:
+        for activity, solutions in inserted_short_loops.items():
+            if len(solutions) > 1:
+                to_remove = set()
+                # remove the short loop if edges_in of one place is a subset of the other place 
+                for sol1, sol2 in combinations(solutions, 2):
+                    set1 = set(a for a, _ in net_places[sol1]["edges_in"])
+                    set2 = set(a for a, _ in net_places[sol2]["edges_in"])
+
+                    if set1 < set2: 
+                        to_remove.add(sol1)
+                    elif set2 < set1:
+                        to_remove.add(sol2)
+                # delete the rest
+                for solution in to_remove:
+                    net_places[solution]["edges_in"] = [
+                        (a, w) for a, w in net_places[solution]["edges_in"] if a != activity]
+                    net_places[solution]["edges_out"] = [
+                        (a, w) for a, w in net_places[solution]["edges_out"]if a != activity]
+        
         return net_places
 
     
@@ -683,7 +731,7 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         obj_with_ss = SynthesisUVCL._set_start_and_end(obj)
         #obj_with_ss = obj
         # optional: filter traces if the resulting net is not satisfying. 
-        filtered_obj = SynthesisUVCL._filter_traces(obj_with_ss, 0.00) 
+        filtered_obj = SynthesisUVCL._filter_traces(obj_with_ss, 0) 
         #SynthesisUVCL.uvcl_to_eventlog_from_sequences(filtered_obj.data_structure)
         
         #SynthesisUVCL.uvcl_to_eventlog_from_sequences(filtered_obj.data_structure)
