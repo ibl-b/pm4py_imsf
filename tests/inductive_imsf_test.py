@@ -20,7 +20,7 @@ from pm4py.objects.petri_net.utils import petri_utils
 
 class IMSFSTest(unittest.TestCase):
     
-    log = "bpi2012_olog.xes"
+    log = "bpi2019c.xes"
     
 
     def test_compare_imf(self, log_name=log):
@@ -42,7 +42,7 @@ class IMSFSTest(unittest.TestCase):
         self.dummy_variable = "dummy_value"
         log = xes_importer.apply(log_name)
         start = time.time()
-        net, initial_marking, final_marking = pm4py.discovery.discover_petri_net_inductive(log, disable_fallthroughs=True, variant="IMSF")
+        net, initial_marking, final_marking = pm4py.discovery.discover_petri_net_inductive(log, disable_fallthroughs=False, variant="IMSF")
         end = time.time()
         print(f"Laufzeit IMSFS: {end - start:.3f} Sekunden")
 

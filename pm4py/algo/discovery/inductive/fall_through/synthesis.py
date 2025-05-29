@@ -712,7 +712,7 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         filtered_obj = SynthesisUVCL._filter_traces(obj_with_ss, 0) 
         
         # set this to False to try creating a net without limited arc weights and empty final places constraints
-        create_wf = False
+        create_wf = True
 
         (
             linear_nets,
