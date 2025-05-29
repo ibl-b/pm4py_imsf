@@ -99,7 +99,9 @@ def discover_dfg(
         )
         from pm4py.util import constants
 
-        from pm4py.algo.discovery.dfg.adapters.pandas.df_statistics import get_dfg_graph
+        from pm4py.algo.discovery.dfg.adapters.pandas.df_statistics import (
+            get_dfg_graph,
+        )
 
         dfg = get_dfg_graph(
             log,
@@ -110,7 +112,9 @@ def discover_dfg(
         from pm4py.statistics.start_activities.pandas import (
             get as start_activities_module,
         )
-        from pm4py.statistics.end_activities.pandas import get as end_activities_module
+        from pm4py.statistics.end_activities.pandas import (
+            get as end_activities_module,
+        )
 
         start_activities = start_activities_module.get_start_activities(
             log, parameters=properties
@@ -122,8 +126,12 @@ def discover_dfg(
         from pm4py.algo.discovery.dfg import algorithm as dfg_discovery
 
         dfg = dfg_discovery.apply(log, parameters=properties)
-        from pm4py.statistics.start_activities.log import get as start_activities_module
-        from pm4py.statistics.end_activities.log import get as end_activities_module
+        from pm4py.statistics.start_activities.log import (
+            get as start_activities_module,
+        )
+        from pm4py.statistics.end_activities.log import (
+            get as end_activities_module,
+        )
 
         start_activities = start_activities_module.get_start_activities(
             log, parameters=properties
@@ -203,7 +211,9 @@ def discover_dfg_typed(
     if pandas_utils.check_is_pandas_dataframe(log):
         return clean.apply(log, parameters)
     else:
-        raise TypeError("pm4py.discover_dfg_typed is only defined for DataFrames")
+        raise TypeError(
+            "pm4py.discover_dfg_typed is only defined for DataFrames"
+        )
 
 
 def discover_performance_dfg(
@@ -214,6 +224,7 @@ def discover_performance_dfg(
     activity_key: str = "concept:name",
     timestamp_key: str = "time:timestamp",
     case_id_key: str = "case:concept:name",
+    perf_aggregation_key: str = "all",
 ) -> Tuple[dict, dict, dict]:
     """
     Discovers a Performance Directly-Follows Graph from an event log.
@@ -236,6 +247,7 @@ def discover_performance_dfg(
     :param activity_key: Attribute to be used for the activity (default: "concept:name").
     :param timestamp_key: Attribute to be used for the timestamp (default: "time:timestamp").
     :param case_id_key: Attribute to be used as case identifier (default: "case:concept:name").
+    :param perf_aggregation_key: Selector for the type of aggregation (all, mean, median, max, min, sum, stdev)
     :return: A tuple of three dictionaries: (performance_dfg, start_activities, end_activities).
     :rtype: ``Tuple[dict, dict, dict]``
 
@@ -268,7 +280,9 @@ def discover_performance_dfg(
         )
         from pm4py.util import constants
 
-        from pm4py.algo.discovery.dfg.adapters.pandas.df_statistics import get_dfg_graph
+        from pm4py.algo.discovery.dfg.adapters.pandas.df_statistics import (
+            get_dfg_graph,
+        )
 
         dfg = get_dfg_graph(
             log,
@@ -276,7 +290,7 @@ def discover_performance_dfg(
             timestamp_key=timestamp_key,
             case_id_glue=case_id_key,
             measure="performance",
-            perf_aggregation_key="all",
+            perf_aggregation_key=perf_aggregation_key,
             business_hours=business_hours,
             business_hours_slot=business_hour_slots,
             workcalendar=workcalendar,
@@ -284,7 +298,9 @@ def discover_performance_dfg(
         from pm4py.statistics.start_activities.pandas import (
             get as start_activities_module,
         )
-        from pm4py.statistics.end_activities.pandas import get as end_activities_module
+        from pm4py.statistics.end_activities.pandas import (
+            get as end_activities_module,
+        )
 
         start_activities = start_activities_module.get_start_activities(
             log, parameters=properties
@@ -293,14 +309,24 @@ def discover_performance_dfg(
             log, parameters=properties
         )
     else:
-        from pm4py.algo.discovery.dfg.variants import performance as dfg_discovery
+        from pm4py.algo.discovery.dfg.variants import (
+            performance as dfg_discovery,
+        )
 
-        properties[dfg_discovery.Parameters.AGGREGATION_MEASURE] = "all"
+        properties[dfg_discovery.Parameters.AGGREGATION_MEASURE] = (
+            perf_aggregation_key
+        )
         properties[dfg_discovery.Parameters.BUSINESS_HOURS] = business_hours
-        properties[dfg_discovery.Parameters.BUSINESS_HOUR_SLOTS] = business_hour_slots
+        properties[dfg_discovery.Parameters.BUSINESS_HOUR_SLOTS] = (
+            business_hour_slots
+        )
         dfg = dfg_discovery.apply(log, parameters=properties)
-        from pm4py.statistics.start_activities.log import get as start_activities_module
-        from pm4py.statistics.end_activities.log import get as end_activities_module
+        from pm4py.statistics.start_activities.log import (
+            get as start_activities_module,
+        )
+        from pm4py.statistics.end_activities.log import (
+            get as end_activities_module,
+        )
 
         start_activities = start_activities_module.get_start_activities(
             log, parameters=properties
@@ -581,7 +607,9 @@ def discover_petri_net_heuristics(
     """
     __event_log_deprecation_warning(log)
 
-    from pm4py.algo.discovery.heuristics.variants import classic as heuristics_miner
+    from pm4py.algo.discovery.heuristics.variants import (
+        classic as heuristics_miner,
+    )
 
     heu_parameters = heuristics_miner.Parameters
     parameters = get_properties(
@@ -675,7 +703,7 @@ def discover_process_tree_inductive(
         if matched_name:
             variant = inductive_miner.Variants[matched_name]
         else:
-            raise ValueError(f"Ungültige Inductive Miner Variante: {variant}")
+            raise ValueError(f"Invalid variant: {variant}")
 
     else: 
         if isinstance(log, DFG):
@@ -732,7 +760,9 @@ def discover_heuristics_net(
     """
     __event_log_deprecation_warning(log)
 
-    from pm4py.algo.discovery.heuristics.variants import classic as heuristics_miner
+    from pm4py.algo.discovery.heuristics.variants import (
+        classic as heuristics_miner,
+    )
 
     heu_parameters = heuristics_miner.Parameters
     parameters = get_properties(
@@ -816,14 +846,14 @@ def derive_minimum_self_distance(
 
 
 def discover_footprints(
-    *args: Union[EventLog, Tuple[PetriNet, Marking, Marking], ProcessTree]
+    *args: Union[EventLog, Tuple[PetriNet, Marking, Marking], ProcessTree, POWL]
 ) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
     """
     Discovers the footprints from the provided event log or process model.
 
     Footprints are a high-level representation of the behavior captured in the event log or process model.
 
-    :param args: Event log, process model (Petri net and markings), or ProcessTree.
+    :param args: Event log, process model (Petri net and markings), or ProcessTree, or POWL.
     :return: A list of footprint dictionaries or a single footprint dictionary.
     :rtype: ``Union[List[Dict[str, Any]], Dict[str, Any]]``
 
@@ -1012,13 +1042,16 @@ def discover_transition_system(
     properties["window"] = window
     properties["view"] = view
 
-    from pm4py.algo.discovery.transition_system import algorithm as ts_discovery
+    from pm4py.algo.discovery.transition_system import (
+        algorithm as ts_discovery,
+    )
 
     return ts_discovery.apply(log, parameters=properties)
 
 
 def discover_prefix_tree(
     log: Union[EventLog, pd.DataFrame],
+    max_path_length: Optional[int] = None,
     activity_key: str = "concept:name",
     timestamp_key: str = "time:timestamp",
     case_id_key: str = "case:concept:name",
@@ -1029,6 +1062,7 @@ def discover_prefix_tree(
     A Prefix Tree represents all the unique prefixes of activity sequences in the log.
 
     :param log: Event log or Pandas DataFrame.
+    :param max_path_length: maximum path length (each trace is trimmed afterwards).
     :param activity_key: Attribute to be used for the activity (default: "concept:name").
     :param timestamp_key: Attribute to be used for the timestamp (default: "time:timestamp").
     :param case_id_key: Attribute to be used as case identifier (default: "case:concept:name").
@@ -1063,7 +1097,11 @@ def discover_prefix_tree(
         case_id_key=case_id_key,
     )
 
-    from pm4py.algo.transformation.log_to_trie import algorithm as trie_discovery
+    properties["max_path_length"] = max_path_length
+
+    from pm4py.algo.transformation.log_to_trie import (
+        algorithm as trie_discovery,
+    )
 
     return trie_discovery.apply(log, parameters=properties)
 
@@ -1198,7 +1236,9 @@ def discover_log_skeleton(
     )
     properties["noise_threshold"] = noise_threshold
 
-    from pm4py.algo.discovery.log_skeleton import algorithm as log_skeleton_discovery
+    from pm4py.algo.discovery.log_skeleton import (
+        algorithm as log_skeleton_discovery,
+    )
 
     return log_skeleton_discovery.apply(log, parameters=properties)
 
@@ -1299,11 +1339,9 @@ def discover_powl(
         print(powl_model)
     """
     from pm4py.algo.discovery.powl.inductive.variants.dynamic_clustering_frequency.dynamic_clustering_frequency_partial_order_cut import (
-        ORDER_FREQUENCY_RATIO,
-    )
+        ORDER_FREQUENCY_RATIO, )
     from pm4py.algo.discovery.powl.inductive.variants.powl_discovery_varaints import (
-        POWLDiscoveryVariant,
-    )
+        POWLDiscoveryVariant, )
 
     if variant is None:
         variant = POWLDiscoveryVariant.MAXIMAL
@@ -1318,12 +1356,9 @@ def discover_powl(
             case_id_key=case_id_key,
         )
 
-    import pm4py
-
-    log = pm4py.convert_to_event_log(log, case_id_key=case_id_key)
-    properties = get_properties(
-        log, activity_key=activity_key, timestamp_key=timestamp_key
-    )
+    #import pm4py
+    #log = pm4py.convert_to_event_log(log, case_id_key=case_id_key)
+    properties = get_properties(log, activity_key=activity_key, timestamp_key=timestamp_key)
 
     if order_graph_filtering_threshold is not None:
         if variant is POWLDiscoveryVariant.DYNAMIC_CLUSTERING:
@@ -1413,3 +1448,66 @@ def discover_batches(
     from pm4py.algo.discovery.batches import algorithm as batches_discovery
 
     return batches_discovery.apply(log, parameters=properties)
+
+
+def correlation_miner(
+    df: pd.DataFrame,
+    annotation: str = "frequency",
+    activity_key: str = "concept:name",
+    timestamp_key: str = "time:timestamp",
+) -> Tuple[dict, dict, dict]:
+    """
+    Applies the Correlation Miner to 'discover' the frequency/performance DFG from an event log without case ID.
+
+    The approach is described in:
+    Pourmirza, Shaya, Remco Dijkman, and Paul Grefen. "Correlation miner: mining business process models and event
+    correlations without case identifiers." International Journal of Cooperative Information Systems 26.02 (2017):
+    1742002.
+
+    :param log: Pandas dataframe
+    :param annotation: annotation ('frequency' for the frequency DFG, or 'performance' for the performance DFG)
+    :param activity_key: attribute to be used for the activity
+    :param timestamp_key: attribute to be used for the timestamp
+    :rtype: ``Tuple[dict, dict, dict]``
+
+    .. code-block:: python3
+
+        import pm4py
+
+        log = pm4py.read_xes("tests/input_data/running-example.xes")
+        log = log[["concept:name", "time:timestamp"]]
+
+        dfg, sa, ea = pm4py.correlation_miner(log)
+        pm4py.view_dfg(dfg, sa, ea, format="svg")
+
+        perf_dfg, sa, ea = pm4py.correlation_miner(log, annotation="performance")
+        pm4py.view_performance_dfg(perf_dfg, sa, ea, format="svg")
+    """
+    properties = get_properties(
+        df, activity_key=activity_key, timestamp_key=timestamp_key
+    )
+
+    first_activity = df[activity_key].iloc[0]
+    last_activity = df[activity_key].iloc[-1]
+
+    from pm4py.algo.discovery.correlation_mining import (
+        algorithm as correlation_miner,
+    )
+
+    dfg, perf_dfg = correlation_miner.apply(df, parameters=properties)
+    perf_dfg = {a: float(y) for a, y in perf_dfg.items()}
+
+    activities_entering = Counter()
+    activities_exiting = Counter()
+
+    for edge, freq in dfg.items():
+        activities_exiting[edge[0]] += freq
+        activities_entering[edge[1]] += freq
+
+    start_activities = {first_activity: activities_exiting[first_activity]}
+    end_activities = {last_activity: activities_entering[last_activity]}
+
+    if annotation == "frequency":
+        return dfg, start_activities, end_activities
+    else:
+        return perf_dfg, start_activities, end_activities

@@ -4,7 +4,7 @@ import sys
 import traceback
 import importlib.util
 
-import pm4py.util.lp.solver
+
 
 EXECUTE_EXAMPLES = True
 
@@ -177,6 +177,30 @@ def cost_based_dfg():
     from examples import cost_based_dfg
     print("\n\ncost_based_dfg")
     cost_based_dfg.execute_script()
+
+
+def bpmn_merging():
+    from examples import bpmn_merging
+    print("\n\nbpmn_merging")
+    bpmn_merging.execute_script()
+
+
+def label_replacement():
+    from examples import label_replacement
+    print("\n\nlabel_replacement")
+    label_replacement.execute_script()
+
+
+def model_to_model_sim():
+    from examples import model_to_model_sim
+    print("\n\nmodel_to_model_sim")
+    model_to_model_sim.execute_script()
+
+
+def monte_carlo_example():
+    from examples import monte_carlo_example
+    print("\n\nmonte_carlo_example")
+    monte_carlo_example.execute_script()
 
 
 def df_to_log_postpro():
@@ -881,6 +905,18 @@ def process_tree_reduction():
     process_tree_reduction.execute_script()
 
 
+def log_to_fit_precise_pn():
+    from examples import log_to_fit_precise_pn
+    print("\n\nlog_to_fit_precise_pn")
+    log_to_fit_precise_pn.execute_script()
+
+
+def streaming_declare():
+    from examples import streaming_declare
+    print("\n\nstreaming_declare")
+    streaming_declare.execute_script()
+
+
 def execute_script(f):
     try:
         f()
@@ -949,6 +985,7 @@ def main():
     print_versions()
 
     if EXECUTE_EXAMPLES:
+        execute_script(log_to_fit_precise_pn)
         execute_script(inductive_miner_dfg_lc)
         execute_script(log_projection_dfg_variant)
         execute_script(streaming_live_to_static_stream)
@@ -1019,7 +1056,7 @@ def main():
         execute_script(link_analysis_vbfa)
         execute_script(ocel_streaming)
         execute_script(petri_manual_generation)
-        #execute_script(timestamp_interleavings)
+        execute_script(timestamp_interleavings)
         execute_script(object_centric_petri_net_discovery)
         execute_script(trans_system_stochastic_view)
         execute_script(network_analysis)
@@ -1037,7 +1074,7 @@ def main():
         execute_script(bpmn_from_pt)
         execute_script(bpmn_import_and_to_petri_net)
         execute_script(tree_playout)
-        execute_script(emd_evaluation)
+        #execute_script(emd_evaluation)
         execute_script(footprints_tree_conf)
         execute_script(footprints_petri_net)
         execute_script(corr_mining)
@@ -1071,14 +1108,15 @@ def main():
         execute_script(feature_extraction_case_loc)
         execute_script(log_skeleton_manual_constraints)
         execute_script(trace_attrib_hierarch_cluster)
+        execute_script(streaming_declare)
         execute_script(streaming_conformance_footprints)
         execute_script(streaming_conformance_tbr)
         execute_script(streaming_csv_reader_event_stream)
         execute_script(streaming_discovery_dfg)
         execute_script(streaming_xes_reader_event_stream)
         execute_script(streaming_xes_reader_trace_stream)
-        #execute_script(monte_carlo_dfg)
-        #execute_script(monte_carlo_petri_net)
+        execute_script(monte_carlo_dfg)
+        execute_script(monte_carlo_petri_net)
 
     print_versions()
 
