@@ -20,20 +20,20 @@ from pm4py.objects.petri_net.utils import petri_utils
 
 class IMSFSTest(unittest.TestCase):
     
-    log = "Road_Traffic_Fine.xes"
+    log = "bpi2012_olog.xes"
     
 
     def test_compare_imf(self, log_name=log):
         # to avoid static method warnings in tests,
         # that by construction of the unittest package have to be expressed in such way
         self.dummy_variable = "dummy_value"
-        log = xes_importer.apply(log_name)
-        start = time.time()
-        net, initial_marking, final_marking = pm4py.discovery.discover_petri_net_inductive(log, variant="im")
-        end = time.time()
-        print(f"Laufzeit IM: {end - start:.3f} Sekunden")
-        vis.view_petri_net(net, initial_marking, final_marking, format="svg")
-        pm4py.write_pnml(net, initial_marking, final_marking, "bpi2020DD_IM.pnml")
+        #log = xes_importer.apply(log_name)
+        #start = time.time()
+        #net, initial_marking, final_marking = pm4py.discovery.discover_petri_net_inductive(log, variant="im")
+        #end = time.time()
+        #print(f"Laufzeit IM: {end - start:.3f} Sekunden")
+        #vis.view_petri_net(net, initial_marking, final_marking, format="svg")
+        #pm4py.write_pnml(net, initial_marking, final_marking, "bpi2020DD_IM.pnml")
 
 
     def test_imsfs(self, log_name=log):

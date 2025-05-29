@@ -27,39 +27,30 @@ from pm4py.algo.discovery.inductive.fall_through.abc import FallThrough
 from pm4py.objects.process_tree.obj import ProcessTree
 from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.objects.petri_net.utils import petri_utils
-from pm4py import vis
 from copy import deepcopy
 from typing import Optional, Tuple, List, Dict, Any, Counter
 from collections import defaultdict
 from itertools import combinations
-from pulp import LpProblem, LpMinimize, LpVariable, lpSum, LpStatus
+from pulp import LpProblem, LpMinimize, LpVariable, lpSum
 import numpy as np
 import uuid 
+import pandas as pd
+from datetime import datetime, timedelta
 
-
-#TODO später löschen, da eigene Methode
-from pm4py.convert import convert_to_process_tree
 import pm4py
 
-#TODO nur für tests, später löschen:
-import pandas as pd
-from pm4py.objects.log.obj import EventLog
-from pm4py.objects.log.util import dataframe_utils
-from pm4py.objects.conversion.log import converter as log_converter
-from datetime import datetime, timedelta
-from pm4py.objects.log.exporter.xes import exporter as xes_exporter
-
-from pm4py.objects.conversion.process_tree import converter as process_tree_converter
 
 class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
 
     """
-    Class for creating a synthesized net based on the token-based algorithm described in [Source].
+    Class for creating a synthesized net based on the token-based algorithm described in:
+    Synthesizing Petri Nets from Labelled Petri Nets. Robin Bergenthum and Jakub Kovář, 2025.
     
     This class is used as a fallthrough in the inductive miner variant 
-    "Inductive Miner with Synthesized Fallthrough Step" (IMsfs).
+    "Inductive Miner with Synthesized Fallthrough Step" (IMSF).
     
-    The inductive miner variant is described in [Source].
+    The inductive miner variant is described in:
+    Ein Inductive Miner mit synthesebasiertem Fall-Through-Schritt. Lisa Berger, 2025
     """
 
     def _filter_traces(
@@ -639,11 +630,9 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         start = petri_utils.get_transition_by_name(net, "Start")
         if len(stop.out_arcs) == 0:
             sink = petri_utils.add_place(net, "sink")
-            #fm[sink] = 1
             petri_utils.add_arc_from_to(fr=stop, to=sink, net=net)
         elif len(stop.out_arcs) == 1:
             sink = next(iter(stop.out_arcs)).target
-            #fm[sink] = 1
         
         # remove the artifical start/stop transition
         stop.label=None
@@ -655,7 +644,7 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
             if not transition.in_arcs and not transition.out_arcs:
                 unconnected_transitions.append(transition)
         
-        # flower model, if unconnected candidates occur more than once in a trace      
+        # use flower model for unconnected transitions    
         if unconnected_transitions:
             flower = petri_utils.add_place(net, "flower")
             for transition in unconnected_transitions:
@@ -674,12 +663,11 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
     
     def uvcl_to_eventlog_from_sequences(uvcl: Counter[Tuple[Any]]):
         """
-        Wandelt eine UVCL (Counter aus Variant-Tuples) in ein EventLog oder DataFrame um.
-        Erzeugt synthetische Traces mit generierten Case-IDs und Zeitstempeln.
+        Converts an UVCL datastructure to an event log. Used to apply conformance
+        checking algorithms for the synthesized nets.
 
-        :param uvcl: Counter mit Varianten (Sequenzen als Tupel) und deren Häufigkeit
-        :param output_format: "log" für EventLog, "df" für DataFrame
-        :return: EventLog oder DataFrame
+        :param uvcl: uvcl representation of the event log
+        :return: event log
         """
         data = []
         base_time = datetime.now()
@@ -700,15 +688,7 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
                 case_counter += 1
 
         df = pd.DataFrame(data)
-        #print(df)
-        #df = dataframe_utils.convert_timestamp_columns_in_df(df)
-        #print(df)
-        #from pm4py.objects.conversion.log.variants.to_event_log import Parameters
-        #parameters = {
-        #Parameters.CASE_ID_KEY: "case:concept:name"
-    #}
         
-        #return log_converter.apply(df, parameters=parameters, variant=log_converter.Variants.TO_EVENT_LOG)
         pm4py.write_xes(df, 'new_log.xes')
     
     @classmethod
@@ -726,17 +706,13 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         ProcessTree, List[IMDataStructureUVCL]]
     ]:  
 
-        #SynthesisUVCL.uvcl_to_eventlog_from_sequences(obj.data_structure)
-        #xes_exporter.apply(log, "teillog.xes")
         obj_with_ss = SynthesisUVCL._set_start_and_end(obj)
-        #obj_with_ss = obj
+        
         # optional: filter traces if the resulting net is not satisfying. 
         filtered_obj = SynthesisUVCL._filter_traces(obj_with_ss, 0) 
-        #SynthesisUVCL.uvcl_to_eventlog_from_sequences(filtered_obj.data_structure)
         
-        #SynthesisUVCL.uvcl_to_eventlog_from_sequences(filtered_obj.data_structure)
         # set this to False to try creating a net without limited arc weights and empty final places constraints
-        create_wf = True
+        create_wf = False
 
         (
             linear_nets,
@@ -746,7 +722,7 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         ) = SynthesisUVCL._init_linear_nets(filtered_obj)
  
         # if using filter, you could try initing the net with obj_with_ss, so every activity of the original object will 
-        # be part of the resulting net (activities that are filtered will be modelled in parallel or as part of a flower model)
+        # be part of the resulting net (activities that are filtered will be as part of a flower model)
         net, im, fm = SynthesisUVCL._init_net(obj_with_ss)
 
         net_places = SynthesisUVCL._solve_ilp_problem(
@@ -754,24 +730,9 @@ class SynthesisUVCL(FallThrough[IMDataStructureUVCL]):
         )
 
         net, im, fm = SynthesisUVCL._insert_net_places(net, im, fm, net_places)
-
-        vis.view_petri_net(net, im, fm, format="svg")
-
         workflow_net, im, fm = SynthesisUVCL._create_wf_net(net, im, fm)
-
-        vis.view_petri_net(workflow_net, im, fm, format="svg")
-        pm4py.write_pnml(net, im, fm, "12roadtraffic.pnml")
-
-        #try:
-           #pt = convert_to_process_tree(
-            #workflow_net,
-            #im,
-            #fm,
-            #) 
-        #except:
         pt = PlaceholderTree(workflow_net, im, fm)
         
-
         return pt, []
     
 

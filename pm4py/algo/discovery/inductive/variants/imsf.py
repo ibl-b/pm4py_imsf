@@ -20,7 +20,7 @@ Website: https://processintelligence.solutions
 Contact: info@processintelligence.solutions
 """
 
-from typing import TypeVar, Generic, Dict, Any, Optional, Counter, Tuple
+from typing import TypeVar, Generic, Dict, Any, Optional, Tuple
 
 from pm4py.algo.discovery.inductive.dtypes.im_ds import (
     IMDataStructureUVCL,
@@ -36,17 +36,29 @@ from pm4py.objects.conversion.process_tree import converter as process_tree_conv
 from pm4py.objects.process_tree.utils import generic as pt_utils
 from pm4py.objects.petri_net.utils import petri_utils
 from pm4py.objects.petri_net.utils import final_marking as fm
-from pm4py import vis
 from copy import copy
 
 
 T = TypeVar("T", bound=IMDataStructureLog)
 
+"""
+Variant of the inductive Miner using synthesis for creating a workflow net as 
+fall through.
+"""
 
 class IMSF(Generic[T], InductiveMinerFramework[T]):
 
     def instance(self) -> IMInstance:
         return IMInstance.IMsf
+    
+    
+    """
+    Converts a process tree to a petri net. Searches for placeholders in the tree, that 
+    store the synthesized nets of the synthesis fall through. 
+
+    :param tree: The process tree to convert  
+    :returns a Tuple containing the resulting petri net, an initial marking and a final marking.
+    """
     
     def convert_to_petri_net(tree: ProcessTree) -> Tuple[PetriNet, Marking, Marking]:
         net, initial_marking, final_marking = process_tree_converter.apply(tree)
@@ -66,14 +78,25 @@ class IMSF(Generic[T], InductiveMinerFramework[T]):
             placeholder_id = placeholder.label.split("_")[-1]
             if placeholder_id in synth_nets:
                 synth_net, synth_im = synth_nets[placeholder_id]
-                net = IMSFUVCL._replace_placeholder_with_synth_net(net, placeholder, synth_net, synth_im, initial_marking)
+                net, initial_marking = IMSFUVCL._replace_placeholder_with_synth_net(net, placeholder, synth_net, synth_im, initial_marking)
 
         net = petri_utils.remove_unconnected_components(net)
-        #vis.view_petri_net(net, initial_marking, final_marking, format="svg")  
         updated_fm = fm.discover_final_marking(net)
         return net, initial_marking, updated_fm   
 
-    def _replace_placeholder_with_synth_net(net:PetriNet, net_placeholder: PetriNet.Transition, synth_net: PetriNet, synth_im: Marking, initial_marking: Marking) -> PetriNet:
+
+    """
+    Replaces a placeholder transition in the petri net with the synthesized net of the corresponding
+    synthesized net
+
+    :param net: the net to insert the synthesized net
+    :param net_placeholder: the placeholder transition to replace with the synthesized net
+    :param synth_net: the synthesized net
+    :param synth_im: the initial marking of the synthesized net
+    :param initial_marking: the initial marking of the petri net
+    :returns a Tuple containing the resulting petri net and an initial marking
+    """
+    def _replace_placeholder_with_synth_net(net:PetriNet, net_placeholder: PetriNet.Transition, synth_net: PetriNet, synth_im: Marking, initial_marking: Marking) -> Tuple[PetriNet, Marking]:
         synth_start = None
         synth_stop = None
         for t in synth_net.transitions:
@@ -89,8 +112,6 @@ class IMSF(Generic[T], InductiveMinerFramework[T]):
         net.places.update(synth_net.places)
         net.arcs.update(synth_net.arcs)
 
-        #vis.view_petri_net(net, initial_marking, Marking(), format="svg")
-
         synth_source_arcs = copy(synth_start.in_arcs)
         synth_sink_arcs = copy(synth_stop.out_arcs)
         for arc in synth_source_arcs:
@@ -105,44 +126,38 @@ class IMSF(Generic[T], InductiveMinerFramework[T]):
             net = petri_utils.remove_arc(net, arc)
             net = petri_utils.remove_place(net, place)
 
-        #vis.view_petri_net(net, initial_marking, Marking(), format="svg")
-
         net = IMSFUVCL._connect_nets(net, net_placeholder, synth_start, synth_stop)
 
         for place, count in synth_im.items():
             initial_marking[place] = count
 
-        #vis.view_petri_net(net, initial_marking, Marking(), format="svg")
+        return net, initial_marking
 
-        return net
+    """
+    Connects the synthesized net with the petri net.
 
-
+    :param net: the petri net
+    :param net_placeholder: the placeholder transition to replace with the synthesized net
+    :param synth_start: the starting silent transition of the synthesized net
+    :param synth_im: the silent transition marking the end of the synthesized net
+    :returns the resulting petri net
+    """
     def _connect_nets(net: PetriNet, net_placeholder: PetriNet.Transition, synth_start: PetriNet.Transition, synth_stop: PetriNet.Transition) -> PetriNet:
         
         arcs_to_remove = []
-        #silent_synth_start = petri_utils.add_transition(net, "silent_synth_start", None)
-        #silent_synth_stop = petri_utils.add_transition(net, "silent_synth_stop", None)
 
         # connect net with start of the synthesized net
         for arc in net_placeholder.in_arcs:
             source = arc.source
             arcs_to_remove.append(arc)
             petri_utils.add_arc_from_to(fr=source, to=synth_start, net=net)
-        #for arc in synth_start.out_arcs:
-            #target = arc.target
-            #arcs_to_remove.append(arc)
-            #petri_utils.add_arc_from_to(fr=synth_start, to=target, net=net)
         
         # connect end of the synthesized net with net
         for arc in net_placeholder.out_arcs:
             target = arc.target
             arcs_to_remove.append(arc)
             petri_utils.add_arc_from_to(fr=synth_stop, to=target, net=net)
-        #for arc in synth_stop.in_arcs:
-            #source = arc.source
-            #arcs_to_remove.append(arc)
-            #petri_utils.add_arc_from_to(fr=source, to=silent_synth_stop, net=net)
-
+        
         for arc in arcs_to_remove:
             petri_utils.remove_arc(net, arc)
         
