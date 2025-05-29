@@ -1,0 +1,241 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<pnml>
+  <net id="imdf_net_1744793161.8781536" type="http://www.pnml.org/version-2009/grammar/pnmlcoremodel">
+    <name>
+      <text>imdf_net_1744793161.8781536</text>
+    </name>
+    <page id="n0">
+      <place id="source">
+        <name>
+          <text>source</text>
+        </name>
+        <initialMarking>
+          <text>1</text>
+        </initialMarking>
+      </place>
+      <place id="p_5">
+        <name>
+          <text>p_5</text>
+        </name>
+      </place>
+      <place id="p_3">
+        <name>
+          <text>p_3</text>
+        </name>
+      </place>
+      <place id="sink">
+        <name>
+          <text>sink</text>
+        </name>
+      </place>
+      <place id="p_6">
+        <name>
+          <text>p_6</text>
+        </name>
+      </place>
+      <place id="p_1_1744793077.31572995729">
+        <name>
+          <text>p_1_1744793077.31572995729</text>
+        </name>
+      </place>
+      <place id="flower">
+        <name>
+          <text>flower</text>
+        </name>
+      </place>
+      <place id="p_4">
+        <name>
+          <text>p_4</text>
+        </name>
+      </place>
+      <place id="p_7">
+        <name>
+          <text>p_7</text>
+        </name>
+      </place>
+      <place id="p_1_1744793161.28523351175">
+        <name>
+          <text>p_1_1744793161.28523351175</text>
+        </name>
+      </place>
+      <transition id="skip_2">
+        <name>
+          <text>skip_2</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="56db1379-e286-4342-8273-ac4d27fce6d8"/>
+      </transition>
+      <transition id="98520810-cc84-4472-b945-66f47333a848">
+        <name>
+          <text>Release Purchase Requisition</text>
+        </name>
+      </transition>
+      <transition id="Change Storage Location">
+        <name>
+          <text>Change Storage Location</text>
+        </name>
+      </transition>
+      <transition id="Stop">
+        <name>
+          <text>Stop</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="40020180-3a6e-4bdd-9e29-a62bf5f7ce5a"/>
+      </transition>
+      <transition id="Cancel Goods Receipt">
+        <name>
+          <text>Cancel Goods Receipt</text>
+        </name>
+      </transition>
+      <transition id="Change Price">
+        <name>
+          <text>Change Price</text>
+        </name>
+      </transition>
+      <transition id="30fb320a-70bc-4ea8-b8d4-abc66c7a849c">
+        <name>
+          <text>Create Purchase Requisition Item</text>
+        </name>
+      </transition>
+      <transition id="0054426d-b595-4ab2-adcf-b5f3b221cbba">
+        <name>
+          <text>Change payment term</text>
+        </name>
+      </transition>
+      <transition id="skip_4">
+        <name>
+          <text>skip_4</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="648426fd-bc24-4975-ae1f-3a357f369488"/>
+      </transition>
+      <transition id="Start">
+        <name>
+          <text>Start</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="622548a8-1d86-483f-a30e-4af14ec11f73"/>
+      </transition>
+      <transition id="Change Quantity">
+        <name>
+          <text>Change Quantity</text>
+        </name>
+      </transition>
+      <transition id="Reactivate Purchase Order Item">
+        <name>
+          <text>Reactivate Purchase Order Item</text>
+        </name>
+      </transition>
+      <transition id="e46b9c7b-c974-4867-9305-26e9a6506942">
+        <name>
+          <text>Create Purchase Order Item</text>
+        </name>
+      </transition>
+      <transition id="Delete Purchase Order Item">
+        <name>
+          <text>Delete Purchase Order Item</text>
+        </name>
+      </transition>
+      <transition id="Start">
+        <name>
+          <text>Start</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="7d17297e-feae-45d5-9642-3fbe7019933b"/>
+      </transition>
+      <transition id="Stop">
+        <name>
+          <text>Stop</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="2f50cc7d-2f7a-4a02-bc4a-4843871cc3e6"/>
+      </transition>
+      <transition id="Record Goods Receipt">
+        <name>
+          <text>Record Goods Receipt</text>
+        </name>
+      </transition>
+      <transition id="skip_1">
+        <name>
+          <text>skip_1</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="b1c2e416-393d-4331-8619-7768ede736cd"/>
+      </transition>
+      <transition id="skip_3">
+        <name>
+          <text>skip_3</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="67617ad2-3ee6-42e2-a1e4-70d7e0ac4e6b"/>
+      </transition>
+      <transition id="42bf4ea7-1451-4f77-9d4d-cbcc8c92c5f8">
+        <name>
+          <text>Change Currency</text>
+        </name>
+      </transition>
+      <transition id="Receive Order Confirmation">
+        <name>
+          <text>Receive Order Confirmation</text>
+        </name>
+      </transition>
+      <transition id="Update Order Confirmation">
+        <name>
+          <text>Update Order Confirmation</text>
+        </name>
+      </transition>
+      <transition id="Change Delivery Indicator">
+        <name>
+          <text>Change Delivery Indicator</text>
+        </name>
+      </transition>
+      <arc id="1621715357696" source="skip_2" target="p_3"/>
+      <arc id="1621715358080" source="p_3" target="e46b9c7b-c974-4867-9305-26e9a6506942"/>
+      <arc id="1621685264512" source="p_1_1744793077.31572995729" target="Change Storage Location"/>
+      <arc id="1621715358608" source="p_5" target="skip_3"/>
+      <arc id="1621715354384" source="p_1_1744793161.28523351175" target="Change Quantity"/>
+      <arc id="1621715359376" source="42bf4ea7-1451-4f77-9d4d-cbcc8c92c5f8" target="p_7"/>
+      <arc id="1621715355152" source="flower" target="Change Price"/>
+      <arc id="1621685256592" source="p_1_1744793077.31572995729" target="Stop"/>
+      <arc id="1621715354000" source="flower" target="Delete Purchase Order Item"/>
+      <arc id="1621715354768" source="Start" target="p_1_1744793161.28523351175"/>
+      <arc id="1621715355536" source="p_1_1744793161.28523351175" target="Update Order Confirmation"/>
+      <arc id="1621715358992" source="p_6" target="Start"/>
+      <arc id="1621715357600" source="p_4" target="skip_2"/>
+      <arc id="1621715357984" source="98520810-cc84-4472-b945-66f47333a848" target="p_3"/>
+      <arc id="1621685258272" source="Start" target="p_1_1744793077.31572995729"/>
+      <arc id="1621715354192" source="Record Goods Receipt" target="p_1_1744793161.28523351175"/>
+      <arc id="1621715359664" source="0054426d-b595-4ab2-adcf-b5f3b221cbba" target="p_6"/>
+      <arc id="1621715356976" source="skip_1" target="p_3"/>
+      <arc id="1621715357360" source="30fb320a-70bc-4ea8-b8d4-abc66c7a849c" target="p_4"/>
+      <arc id="1621685258416" source="Change Storage Location" target="p_1_1744793077.31572995729"/>
+      <arc id="1621715353904" source="Start" target="flower"/>
+      <arc id="1621715354288" source="Update Order Confirmation" target="p_1_1744793161.28523351175"/>
+      <arc id="1621715358800" source="Stop" target="sink"/>
+      <arc id="1621715355440" source="p_1_1744793161.28523351175" target="Record Goods Receipt"/>
+      <arc id="1621715358272" source="e46b9c7b-c974-4867-9305-26e9a6506942" target="p_5"/>
+      <arc id="1621715356352" source="p_5" target="Start"/>
+      <arc id="1621715355344" source="Change Quantity" target="p_1_1744793161.28523351175"/>
+      <arc id="1621715356880" source="source" target="skip_1"/>
+      <arc id="1621715354960" source="p_1_1744793161.28523351175" target="Change Delivery Indicator"/>
+      <arc id="1621715359184" source="p_5" target="42bf4ea7-1451-4f77-9d4d-cbcc8c92c5f8"/>
+      <arc id="1621715359952" source="skip_4" target="sink"/>
+      <arc id="1621715360336" source="Stop" target="p_6"/>
+      <arc id="1621715354576" source="Receive Order Confirmation" target="flower"/>
+      <arc id="1621685259088" source="Change Price" target="flower"/>
+      <arc id="1621709448784" source="Change Delivery Indicator" target="p_1_1744793161.28523351175"/>
+      <arc id="1621715353808" source="p_1_1744793161.28523351175" target="Cancel Goods Receipt"/>
+      <arc id="1621685267152" source="Reactivate Purchase Order Item" target="flower"/>
+      <arc id="1621715355632" source="flower" target="Stop"/>
+      <arc id="1621715357792" source="p_4" target="98520810-cc84-4472-b945-66f47333a848"/>
+      <arc id="1621715359472" source="p_7" target="0054426d-b595-4ab2-adcf-b5f3b221cbba"/>
+      <arc id="1621715357168" source="source" target="30fb320a-70bc-4ea8-b8d4-abc66c7a849c"/>
+      <arc id="1621715358704" source="skip_3" target="p_6"/>
+      <arc id="1621715359856" source="p_6" target="skip_4"/>
+      <arc id="1621715354480" source="Delete Purchase Order Item" target="flower"/>
+      <arc id="1621715354864" source="Cancel Goods Receipt" target="p_1_1744793161.28523351175"/>
+      <arc id="1621715353712" source="p_1_1744793161.28523351175" target="Stop"/>
+      <arc id="1621715354096" source="flower" target="Receive Order Confirmation"/>
+      <arc id="1621715355248" source="flower" target="Reactivate Purchase Order Item"/>
+    </page>
+    <finalmarkings>
+      <marking>
+        <place idref="sink">
+          <text>1</text>
+        </place>
+      </marking>
+    </finalmarkings>
+  </net>
+</pnml>

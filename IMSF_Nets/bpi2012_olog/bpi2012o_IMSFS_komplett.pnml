@@ -1,0 +1,130 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<pnml>
+  <net id="imdf_net_1743405809.9812117" type="http://www.pnml.org/version-2009/grammar/pnmlcoremodel">
+    <name>
+      <text>imdf_net_1743405809.9812117</text>
+    </name>
+    <page id="n0">
+      <place id="source">
+        <name>
+          <text>source</text>
+        </name>
+        <initialMarking>
+          <text>1</text>
+        </initialMarking>
+      </place>
+      <place id="p_3">
+        <name>
+          <text>p_3</text>
+        </name>
+      </place>
+      <place id="sink">
+        <name>
+          <text>sink</text>
+        </name>
+      </place>
+      <place id="p_2_1743405731.3407765400">
+        <name>
+          <text>p_2_1743405731.3407765400</text>
+        </name>
+      </place>
+      <place id="p_1_1743405731.3407769256">
+        <name>
+          <text>p_1_1743405731.3407769256</text>
+        </name>
+      </place>
+      <place id="p_3_1743405731.3407765290">
+        <name>
+          <text>p_3_1743405731.3407765290</text>
+        </name>
+      </place>
+      <place id="flower">
+        <name>
+          <text>flower</text>
+        </name>
+      </place>
+      <transition id="dd780102-fd21-446c-a10e-97afc9082d80">
+        <name>
+          <text>O_ACCEPTED</text>
+        </name>
+      </transition>
+      <transition id="bb363edd-b767-48a9-98f1-1b2176ad21c6">
+        <name>
+          <text>O_DECLINED</text>
+        </name>
+      </transition>
+      <transition id="O_SENT_BACK">
+        <name>
+          <text>O_SENT_BACK</text>
+        </name>
+      </transition>
+      <transition id="O_CREATED">
+        <name>
+          <text>O_CREATED</text>
+        </name>
+      </transition>
+      <transition id="silent_synth_start">
+        <name>
+          <text>silent_synth_start</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="108ca29b-2996-4ecd-9d5e-c2509354c3b9"/>
+      </transition>
+      <transition id="skip_1">
+        <name>
+          <text>skip_1</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="26979b8c-ec7c-4b1e-92ce-418143b62596"/>
+      </transition>
+      <transition id="O_CANCELLED">
+        <name>
+          <text>O_CANCELLED</text>
+        </name>
+      </transition>
+      <transition id="O_SELECTED">
+        <name>
+          <text>O_SELECTED</text>
+        </name>
+      </transition>
+      <transition id="O_SENT">
+        <name>
+          <text>O_SENT</text>
+        </name>
+      </transition>
+      <transition id="silent_synth_stop">
+        <name>
+          <text>silent_synth_stop</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="bc0a95a9-43d2-4009-8cd1-0bed551e2f72"/>
+      </transition>
+      <arc id="2023277130560" source="p_3" target="dd780102-fd21-446c-a10e-97afc9082d80"/>
+      <arc id="2023277130368" source="dd780102-fd21-446c-a10e-97afc9082d80" target="sink"/>
+      <arc id="2023277128448" source="p_3_1743405731.3407765290" target="O_CREATED"/>
+      <arc id="2023277127488" source="flower" target="O_CANCELLED"/>
+      <arc id="2023275708864" source="silent_synth_start" target="p_2_1743405731.3407765400"/>
+      <arc id="2023275709056" source="flower" target="silent_synth_stop"/>
+      <arc id="2023277131280" source="p_3" target="skip_1"/>
+      <arc id="2023275709008" source="silent_synth_stop" target="p_3"/>
+      <arc id="2023277127056" source="O_CREATED" target="p_1_1743405731.3407769256"/>
+      <arc id="2023277123600" source="source" target="silent_synth_start"/>
+      <arc id="2023277130656" source="skip_1" target="sink"/>
+      <arc id="2023277130272" source="p_3" target="bb363edd-b767-48a9-98f1-1b2176ad21c6"/>
+      <arc id="2023277130080" source="bb363edd-b767-48a9-98f1-1b2176ad21c6" target="sink"/>
+      <arc id="2023277128160" source="flower" target="O_SENT_BACK"/>
+      <arc id="2023277128544" source="p_1_1743405731.3407769256" target="O_SENT"/>
+      <arc id="2023277128352" source="O_SENT_BACK" target="flower"/>
+      <arc id="2023277125472" source="O_SELECTED" target="p_3_1743405731.3407765290"/>
+      <arc id="2023277131424" source="silent_synth_start" target="flower"/>
+      <arc id="2023277128112" source="O_SENT" target="p_2_1743405731.3407765400"/>
+      <arc id="2023277126960" source="p_2_1743405731.3407765400" target="O_SELECTED"/>
+      <arc id="2023277126768" source="O_CANCELLED" target="flower"/>
+      <arc id="2023275709104" source="p_2_1743405731.3407765400" target="silent_synth_stop"/>
+    </page>
+    <finalmarkings>
+      <marking>
+        <place idref="sink">
+          <text>1</text>
+        </place>
+      </marking>
+    </finalmarkings>
+  </net>
+</pnml>

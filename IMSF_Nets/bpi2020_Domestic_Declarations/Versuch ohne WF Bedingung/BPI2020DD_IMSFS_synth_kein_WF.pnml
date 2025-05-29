@@ -1,0 +1,233 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<pnml>
+  <net id="imsfs" type="http://www.pnml.org/version-2009/grammar/pnmlcoremodel">
+    <name>
+      <text>imsfs</text>
+    </name>
+    <page id="n0">
+      <place id="p_0_1744797100.97832828612">
+        <name>
+          <text>p_0_1744797100.97832828612</text>
+        </name>
+        <initialMarking>
+          <text>1</text>
+        </initialMarking>
+      </place>
+      <place id="p_2_1744797100.97832829296">
+        <name>
+          <text>p_2_1744797100.97832829296</text>
+        </name>
+      </place>
+      <place id="p_6_1744797100.97936532065">
+        <name>
+          <text>p_6_1744797100.97936532065</text>
+        </name>
+      </place>
+      <place id="p_10_1744797100.97936537123">
+        <name>
+          <text>p_10_1744797100.97936537123</text>
+        </name>
+      </place>
+      <place id="p_11_1744797100.97936539611">
+        <name>
+          <text>p_11_1744797100.97936539611</text>
+        </name>
+      </place>
+      <place id="p_14_1744797100.97936538750">
+        <name>
+          <text>p_14_1744797100.97936538750</text>
+        </name>
+      </place>
+      <place id="p_15_1744797100.9793653429">
+        <name>
+          <text>p_15_1744797100.9793653429</text>
+        </name>
+      </place>
+      <place id="p_17_1744797100.97936533208">
+        <name>
+          <text>p_17_1744797100.97936533208</text>
+        </name>
+      </place>
+      <place id="p_1_1744797100.97832829290">
+        <name>
+          <text>p_1_1744797100.97832829290</text>
+        </name>
+      </place>
+      <place id="p_4_1744797100.97832825347">
+        <name>
+          <text>p_4_1744797100.97832825347</text>
+        </name>
+      </place>
+      <place id="p_3_1744797100.97832829410">
+        <name>
+          <text>p_3_1744797100.97832829410</text>
+        </name>
+      </place>
+      <place id="p_5_1744797100.97936534763">
+        <name>
+          <text>p_5_1744797100.97936534763</text>
+        </name>
+      </place>
+      <place id="p_7_1744797100.97936531001">
+        <name>
+          <text>p_7_1744797100.97936531001</text>
+        </name>
+      </place>
+      <place id="p_8_1744797100.97936539258">
+        <name>
+          <text>p_8_1744797100.97936539258</text>
+        </name>
+      </place>
+      <place id="p_9_1744797100.97936536647">
+        <name>
+          <text>p_9_1744797100.97936536647</text>
+        </name>
+      </place>
+      <place id="p_12_1744797100.97936537404">
+        <name>
+          <text>p_12_1744797100.97936537404</text>
+        </name>
+      </place>
+      <place id="p_13_1744797100.97936537341">
+        <name>
+          <text>p_13_1744797100.97936537341</text>
+        </name>
+      </place>
+      <place id="p_16_1744797100.97936535412">
+        <name>
+          <text>p_16_1744797100.97936535412</text>
+        </name>
+      </place>
+      <transition id="Declaration FINAL_APPROVED by SUPERVISOR">
+        <name>
+          <text>Declaration FINAL_APPROVED by SUPERVISOR</text>
+        </name>
+      </transition>
+      <transition id="Declaration REJECTED by MISSING">
+        <name>
+          <text>Declaration REJECTED by MISSING</text>
+        </name>
+      </transition>
+      <transition id="Declaration REJECTED by SUPERVISOR">
+        <name>
+          <text>Declaration REJECTED by SUPERVISOR</text>
+        </name>
+      </transition>
+      <transition id="Payment Handled">
+        <name>
+          <text>Payment Handled</text>
+        </name>
+      </transition>
+      <transition id="Request Payment">
+        <name>
+          <text>Request Payment</text>
+        </name>
+      </transition>
+      <transition id="Start">
+        <name>
+          <text>Start</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="98e83b2d-0ec1-4743-9749-65678a8eecb6"/>
+      </transition>
+      <transition id="Declaration FOR_APPROVAL by SUPERVISOR">
+        <name>
+          <text>Declaration FOR_APPROVAL by SUPERVISOR</text>
+        </name>
+      </transition>
+      <transition id="Declaration FOR_APPROVAL by PRE_APPROVER">
+        <name>
+          <text>Declaration FOR_APPROVAL by PRE_APPROVER</text>
+        </name>
+      </transition>
+      <transition id="Stop">
+        <name>
+          <text>Stop</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="adba31ed-650b-4010-8c05-120c8a8225ae"/>
+      </transition>
+      <arc id="2111353373696" source="Declaration FINAL_APPROVED by SUPERVISOR" target="p_4_1744797100.97832825347"/>
+      <arc id="2111353385984" source="Start" target="p_8_1744797100.97936539258"/>
+      <arc id="2111353381376" source="p_10_1744797100.97936537123" target="Payment Handled"/>
+      <arc id="2111353380368" source="Start" target="p_9_1744797100.97936536647"/>
+      <arc id="2111353383440" source="Declaration FINAL_APPROVED by SUPERVISOR" target="p_13_1744797100.97936537341"/>
+      <arc id="2111353373216" source="p_4_1744797100.97832825347" target="Declaration REJECTED by MISSING"/>
+      <arc id="2111353382960" source="p_12_1744797100.97936537404" target="Declaration REJECTED by MISSING"/>
+      <arc id="2111353387568" source="p_17_1744797100.97936533208" target="Payment Handled"/>
+      <arc id="2111353388096" source="p_16_1744797100.97936535412" target="Declaration FOR_APPROVAL by SUPERVISOR"/>
+      <arc id="2111353385024" source="Declaration FINAL_APPROVED by SUPERVISOR" target="p_6_1744797100.97936532065"/>
+      <arc id="2111353376336" source="p_8_1744797100.97936539258" target="Payment Handled"/>
+      <arc id="2111353384016" source="Declaration FINAL_APPROVED by SUPERVISOR" target="p_14_1744797100.97936538750"/>
+      <arc id="2111353388624" source="Declaration FINAL_APPROVED by SUPERVISOR" target="p_16_1744797100.97936535412"/>
+      <arc id="2111353381472" source="Request Payment" target="p_15_1744797100.9793653429"/>
+      <arc id="2111353372784" source="Declaration FOR_APPROVAL by SUPERVISOR" target="p_5_1744797100.97936534763"/>
+      <arc id="2111353380464" source="p_9_1744797100.97936536647" target="Declaration FOR_APPROVAL by SUPERVISOR"/>
+      <arc id="2111353382000" source="Start" target="p_15_1744797100.9793653429"/>
+      <arc id="2111353386608" source="Start" target="p_17_1744797100.97936533208"/>
+      <arc id="2111353388144" source="Declaration FOR_APPROVAL by SUPERVISOR" target="p_17_1744797100.97936533208"/>
+      <arc id="2111353373312" source="Declaration FOR_APPROVAL by PRE_APPROVER" target="p_4_1744797100.97832825347"/>
+      <arc id="2111353380992" source="p_9_1744797100.97936536647" target="Declaration FOR_APPROVAL by PRE_APPROVER"/>
+      <arc id="2111353382528" source="Declaration FINAL_APPROVED by SUPERVISOR" target="p_12_1744797100.97936537404"/>
+      <arc id="2111353373840" source="p_1_1744797100.97832829290" target="Stop"/>
+      <arc id="2111353383056" source="p_11_1744797100.97936539611" target="Declaration REJECTED by MISSING"/>
+      <arc id="2111353384592" source="p_15_1744797100.9793653429" target="Payment Handled"/>
+      <arc id="2111353387664" source="Declaration FOR_APPROVAL by PRE_APPROVER" target="p_17_1744797100.97936533208"/>
+      <arc id="2111353374368" source="Stop" target="p_2_1744797100.97832829296"/>
+      <arc id="2111353385120" source="Request Payment" target="p_6_1744797100.97936532065"/>
+      <arc id="2111353384112" source="p_14_1744797100.97936538750" target="Request Payment"/>
+      <arc id="2111353388720" source="Start" target="p_16_1744797100.97936535412"/>
+      <arc id="2111353384640" source="Declaration FOR_APPROVAL by PRE_APPROVER" target="p_5_1744797100.97936534763"/>
+      <arc id="2111353381568" source="p_10_1744797100.97936537123" target="Declaration REJECTED by SUPERVISOR"/>
+      <arc id="2111353372880" source="Request Payment" target="p_5_1744797100.97936534763"/>
+      <arc id="2111353380560" source="p_9_1744797100.97936536647" target="Request Payment"/>
+      <arc id="2111353373408" source="Payment Handled" target="p_1_1744797100.97832829290"/>
+      <arc id="2111353385696" source="p_7_1744797100.97936531001" target="Declaration FOR_APPROVAL by SUPERVISOR"/>
+      <arc id="2111353373936" source="p_3_1744797100.97832829410" target="Declaration FINAL_APPROVED by SUPERVISOR"/>
+      <arc id="2111353374464" source="Declaration REJECTED by MISSING" target="p_1_1744797100.97832829290"/>
+      <arc id="2111353385216" source="p_6_1744797100.97936532065" target="Payment Handled"/>
+      <arc id="2111353383680" source="p_10_1744797100.97936537123" target="Declaration FOR_APPROVAL by PRE_APPROVER"/>
+      <arc id="2111353373456" source="Start" target="p_3_1744797100.97832829410"/>
+      <arc id="2111353384208" source="Start" target="p_14_1744797100.97936538750"/>
+      <arc id="2111353384736" source="p_5_1744797100.97936534763" target="Payment Handled"/>
+      <arc id="2111353383200" source="p_13_1744797100.97936537341" target="Payment Handled"/>
+      <arc id="2111353372976" source="Declaration FINAL_APPROVED by SUPERVISOR" target="p_5_1744797100.97936534763"/>
+      <arc id="2111353380656" source="p_9_1744797100.97936536647" target="Declaration REJECTED by SUPERVISOR"/>
+      <arc id="2111353375040" source="p_0_1744797100.97832828612" target="Start"/>
+      <arc id="2111353385792" source="p_7_1744797100.97936531001" target="Declaration FOR_APPROVAL by PRE_APPROVER"/>
+      <arc id="2111353381184" source="Start" target="p_10_1744797100.97936537123"/>
+      <arc id="2111353388864" source="p_15_1744797100.9793653429" target="Declaration FOR_APPROVAL by PRE_APPROVER"/>
+      <arc id="2111353374032" source="p_3_1744797100.97832829410" target="Declaration FOR_APPROVAL by SUPERVISOR"/>
+      <arc id="2111353382240" source="Start" target="p_12_1744797100.97936537404"/>
+      <arc id="2111353384832" source="p_5_1744797100.97936534763" target="Declaration REJECTED by MISSING"/>
+      <arc id="2111353381760" source="p_10_1744797100.97936537123" target="Declaration FOR_APPROVAL by SUPERVISOR"/>
+      <arc id="2111353382288" source="p_12_1744797100.97936537404" target="Request Payment"/>
+      <arc id="2111353380752" source="p_13_1744797100.97936537341" target="Declaration REJECTED by MISSING"/>
+      <arc id="2111353373600" source="p_3_1744797100.97832829410" target="Declaration FOR_APPROVAL by PRE_APPROVER"/>
+      <arc id="2111353381280" source="p_8_1744797100.97936539258" target="Declaration REJECTED by MISSING"/>
+      <arc id="2111353384352" source="p_14_1744797100.97936538750" target="Declaration FOR_APPROVAL by SUPERVISOR"/>
+      <arc id="2111353374128" source="p_3_1744797100.97832829410" target="Declaration REJECTED by SUPERVISOR"/>
+      <arc id="2111353383344" source="Start" target="p_11_1744797100.97936539611"/>
+      <arc id="2111353387952" source="p_16_1744797100.97936535412" target="Declaration FOR_APPROVAL by PRE_APPROVER"/>
+      <arc id="2111353374656" source="Declaration REJECTED by SUPERVISOR" target="p_1_1744797100.97832829290"/>
+      <arc id="2111353373120" source="Declaration FOR_APPROVAL by SUPERVISOR" target="p_4_1744797100.97832825347"/>
+      <arc id="2111353385408" source="Start" target="p_7_1744797100.97936531001"/>
+      <arc id="2111353382864" source="Start" target="p_13_1744797100.97936537341"/>
+      <arc id="2111353381328" source="p_14_1744797100.97936538750" target="Declaration FOR_APPROVAL by PRE_APPROVER"/>
+      <arc id="2111353389008" source="p_15_1744797100.9793653429" target="Declaration FOR_APPROVAL by SUPERVISOR"/>
+      <arc id="2111353387472" source="p_17_1744797100.97936533208" target="Declaration REJECTED by MISSING">
+        <inscription>
+          <text>2</text>
+        </inscription>
+      </arc>
+      <arc id="2111353380320" source="p_8_1744797100.97936539258" target="Declaration REJECTED by SUPERVISOR"/>
+      <arc id="2111353388000" source="Declaration FINAL_APPROVED by SUPERVISOR" target="p_17_1744797100.97936533208"/>
+      <arc id="2111353388528" source="p_16_1744797100.97936535412" target="Payment Handled"/>
+    </page>
+    <finalmarkings>
+      <marking>
+        <place idref="p_2_1744797100.97832829296">
+          <text>1</text>
+        </place>
+      </marking>
+    </finalmarkings>
+  </net>
+</pnml>

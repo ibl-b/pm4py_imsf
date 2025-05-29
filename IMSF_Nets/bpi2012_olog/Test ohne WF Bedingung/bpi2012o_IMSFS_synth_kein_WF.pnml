@@ -1,0 +1,116 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<pnml>
+  <net id="imsfs" type="http://www.pnml.org/version-2009/grammar/pnmlcoremodel">
+    <name>
+      <text>imsfs</text>
+    </name>
+    <page id="n0">
+      <place id="p_1_1744614052.8445253667">
+        <name>
+          <text>p_1_1744614052.8445253667</text>
+        </name>
+      </place>
+      <place id="p_4_1744614052.8445258868">
+        <name>
+          <text>p_4_1744614052.8445258868</text>
+        </name>
+      </place>
+      <place id="p_2_1744614052.8445259502">
+        <name>
+          <text>p_2_1744614052.8445259502</text>
+        </name>
+      </place>
+      <place id="p_0_1744614052.84348969938">
+        <name>
+          <text>p_0_1744614052.84348969938</text>
+        </name>
+        <initialMarking>
+          <text>1</text>
+        </initialMarking>
+      </place>
+      <place id="p_3_1744614052.8445255097">
+        <name>
+          <text>p_3_1744614052.8445255097</text>
+        </name>
+      </place>
+      <place id="p_5_1744614052.8445252978">
+        <name>
+          <text>p_5_1744614052.8445252978</text>
+        </name>
+      </place>
+      <place id="p_6_1744614052.8445255509">
+        <name>
+          <text>p_6_1744614052.8445255509</text>
+        </name>
+      </place>
+      <place id="flower">
+        <name>
+          <text>flower</text>
+        </name>
+      </place>
+      <transition id="O_CANCELLED">
+        <name>
+          <text>O_CANCELLED</text>
+        </name>
+      </transition>
+      <transition id="O_SELECTED">
+        <name>
+          <text>O_SELECTED</text>
+        </name>
+      </transition>
+      <transition id="O_CREATED">
+        <name>
+          <text>O_CREATED</text>
+        </name>
+      </transition>
+      <transition id="Start">
+        <name>
+          <text>Start</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="729d003d-7ca6-48f9-a7d2-59ece944601c"/>
+      </transition>
+      <transition id="Stop">
+        <name>
+          <text>Stop</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="4eba9801-6acb-4326-af2d-2388caf85231"/>
+      </transition>
+      <transition id="O_SENT_BACK">
+        <name>
+          <text>O_SENT_BACK</text>
+        </name>
+      </transition>
+      <transition id="O_SENT">
+        <name>
+          <text>O_SENT</text>
+        </name>
+      </transition>
+      <arc id="2878052293248" source="p_2_1744614052.8445259502" target="O_SENT"/>
+      <arc id="2878052290560" source="O_SENT" target="p_4_1744614052.8445258868"/>
+      <arc id="2878052295552" source="Start" target="p_6_1744614052.8445255509"/>
+      <arc id="2876061204096" source="flower" target="Stop"/>
+      <arc id="2878058069776" source="O_SENT_BACK" target="flower"/>
+      <arc id="2878052290320" source="Start" target="flower"/>
+      <arc id="2878052290464" source="O_SELECTED" target="p_3_1744614052.8445255097"/>
+      <arc id="2878052292384" source="p_3_1744614052.8445255097" target="O_CREATED"/>
+      <arc id="2878052292000" source="p_4_1744614052.8445258868" target="O_CANCELLED"/>
+      <arc id="2878052291232" source="p_6_1744614052.8445255509" target="Stop"/>
+      <arc id="2878052290848" source="flower" target="O_SENT_BACK"/>
+      <arc id="2878052294448" source="O_CREATED" target="p_2_1744614052.8445259502"/>
+      <arc id="2878052295120" source="p_0_1744614052.84348969938" target="Start"/>
+      <arc id="2878052291664" source="O_CANCELLED" target="p_5_1744614052.8445252978"/>
+      <arc id="2878052295648" source="O_SENT" target="p_6_1744614052.8445255509"/>
+      <arc id="2878052295264" source="p_6_1744614052.8445255509" target="O_SELECTED"/>
+      <arc id="2878052294640" source="Stop" target="p_1_1744614052.8445253667"/>
+      <arc id="2878052290032" source="Start" target="p_5_1744614052.8445252978"/>
+      <arc id="2878052291568" source="p_5_1744614052.8445252978" target="O_CREATED"/>
+    </page>
+    <finalmarkings>
+      <marking>
+        <place idref="p_1_1744614052.8445253667">
+          <text>1</text>
+        </place>
+      </marking>
+    </finalmarkings>
+  </net>
+</pnml>

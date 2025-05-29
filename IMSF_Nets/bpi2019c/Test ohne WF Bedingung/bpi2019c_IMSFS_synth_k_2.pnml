@@ -1,0 +1,117 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<pnml>
+  <net id="imsfs" type="http://www.pnml.org/version-2009/grammar/pnmlcoremodel">
+    <name>
+      <text>imsfs</text>
+    </name>
+    <page id="n0">
+      <place id="p_1_1747818346.50181531440">
+        <name>
+          <text>p_1_1747818346.50181531440</text>
+        </name>
+        <initialMarking>
+          <text>1</text>
+        </initialMarking>
+      </place>
+      <place id="p_5_1747818346.50181537605">
+        <name>
+          <text>p_5_1747818346.50181537605</text>
+        </name>
+      </place>
+      <place id="p_0_1747818346.50181539107">
+        <name>
+          <text>p_0_1747818346.50181539107</text>
+        </name>
+      </place>
+      <place id="p_3_1747818346.5018153501">
+        <name>
+          <text>p_3_1747818346.5018153501</text>
+        </name>
+      </place>
+      <place id="p_2_1747818346.50181531073">
+        <name>
+          <text>p_2_1747818346.50181531073</text>
+        </name>
+      </place>
+      <place id="p_4_1747818346.50181536125">
+        <name>
+          <text>p_4_1747818346.50181536125</text>
+        </name>
+      </place>
+      <transition id="Cancel Goods Receipt">
+        <name>
+          <text>Cancel Goods Receipt</text>
+        </name>
+      </transition>
+      <transition id="Record Goods Receipt">
+        <name>
+          <text>Record Goods Receipt</text>
+        </name>
+      </transition>
+      <transition id="Change Delivery Indicator">
+        <name>
+          <text>Change Delivery Indicator</text>
+        </name>
+      </transition>
+      <transition id="Receive Order Confirmation">
+        <name>
+          <text>Receive Order Confirmation</text>
+        </name>
+      </transition>
+      <transition id="Change Quantity">
+        <name>
+          <text>Change Quantity</text>
+        </name>
+      </transition>
+      <transition id="Start">
+        <name>
+          <text>Start</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="d13f11d1-9f42-4054-8072-b475315a9ba3"/>
+      </transition>
+      <transition id="Stop">
+        <name>
+          <text>Stop</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="2154ce58-5870-4f71-9a38-e9254ef4e085"/>
+      </transition>
+      <transition id="Update Order Confirmation">
+        <name>
+          <text>Update Order Confirmation</text>
+        </name>
+      </transition>
+      <arc id="2130716848096" source="Update Order Confirmation" target="p_0_1747818346.50181539107"/>
+      <arc id="2130716849344" source="p_3_1747818346.5018153501" target="Record Goods Receipt"/>
+      <arc id="2130716848864" source="p_1_1747818346.50181531440" target="Start"/>
+      <arc id="2130716838592" source="Start" target="p_3_1747818346.5018153501"/>
+      <arc id="2130716850496" source="p_3_1747818346.5018153501" target="Change Quantity"/>
+      <arc id="2130716847520" source="p_3_1747818346.5018153501" target="Receive Order Confirmation"/>
+      <arc id="2130716849536" source="Change Quantity" target="p_4_1747818346.50181536125"/>
+      <arc id="2130716837440" source="Change Delivery Indicator" target="p_4_1747818346.50181536125"/>
+      <arc id="2130716850112" source="Receive Order Confirmation" target="p_4_1747818346.50181536125"/>
+      <arc id="2130716839456" source="Record Goods Receipt" target="p_5_1747818346.50181537605"/>
+      <arc id="2130716850544" source="Stop" target="p_2_1747818346.50181531073"/>
+      <arc id="2130716846224" source="p_3_1747818346.5018153501" target="Change Delivery Indicator"/>
+      <arc id="2130716848240" source="Record Goods Receipt" target="p_4_1747818346.50181536125"/>
+      <arc id="2130716839504" source="Cancel Goods Receipt" target="p_4_1747818346.50181536125"/>
+      <arc id="2130716840656" source="p_4_1747818346.50181536125" target="Stop"/>
+      <arc id="2130716845840" source="p_4_1747818346.50181536125" target="Cancel Goods Receipt"/>
+      <arc id="2130716843824" source="Receive Order Confirmation" target="p_5_1747818346.50181537605">
+        <inscription>
+          <text>2</text>
+        </inscription>
+      </arc>
+      <arc id="2130716846752" source="p_5_1747818346.50181537605" target="Update Order Confirmation"/>
+    </page>
+    <finalmarkings>
+      <marking>
+        <place idref="p_0_1747818346.50181539107">
+          <text>1</text>
+        </place>
+        <place idref="p_2_1747818346.50181531073">
+          <text>1</text>
+        </place>
+      </marking>
+    </finalmarkings>
+  </net>
+</pnml>

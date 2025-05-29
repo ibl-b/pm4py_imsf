@@ -1,0 +1,98 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<pnml>
+  <net id="imsfs" type="http://www.pnml.org/version-2009/grammar/pnmlcoremodel">
+    <name>
+      <text>imsfs</text>
+    </name>
+    <page id="n0">
+      <place id="p_0_1744382019.12322472445">
+        <name>
+          <text>p_0_1744382019.12322472445</text>
+        </name>
+        <initialMarking>
+          <text>1</text>
+        </initialMarking>
+      </place>
+      <place id="p_1_1744382019.12322477194">
+        <name>
+          <text>p_1_1744382019.12322477194</text>
+        </name>
+      </place>
+      <place id="sink">
+        <name>
+          <text>sink</text>
+        </name>
+      </place>
+      <place id="p_2_1744382019.12322479608">
+        <name>
+          <text>p_2_1744382019.12322479608</text>
+        </name>
+      </place>
+      <transition id="Stop">
+        <name>
+          <text>Stop</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="8ff6ffa2-496f-46ca-a40c-8d18297fca22"/>
+      </transition>
+      <transition id="Update Order Confirmation">
+        <name>
+          <text>Update Order Confirmation</text>
+        </name>
+      </transition>
+      <transition id="Cancel Goods Receipt">
+        <name>
+          <text>Cancel Goods Receipt</text>
+        </name>
+      </transition>
+      <transition id="Change Delivery Indicator">
+        <name>
+          <text>Change Delivery Indicator</text>
+        </name>
+      </transition>
+      <transition id="Change Quantity">
+        <name>
+          <text>Change Quantity</text>
+        </name>
+      </transition>
+      <transition id="Record Goods Receipt">
+        <name>
+          <text>Record Goods Receipt</text>
+        </name>
+      </transition>
+      <transition id="Receive Order Confirmation">
+        <name>
+          <text>Receive Order Confirmation</text>
+        </name>
+      </transition>
+      <transition id="Start">
+        <name>
+          <text>Start</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="2973f463-2e0a-4ee3-8ab8-b1561ebc5f55"/>
+      </transition>
+      <arc id="1776324209408" source="p_0_1744382019.12322472445" target="Start"/>
+      <arc id="1776324210752" source="p_1_1744382019.12322477194" target="Change Quantity"/>
+      <arc id="1776324209312" source="Start" target="p_1_1744382019.12322477194"/>
+      <arc id="1776324211520" source="p_1_1744382019.12322477194" target="Receive Order Confirmation"/>
+      <arc id="1776324214304" source="Change Quantity" target="p_2_1744382019.12322479608"/>
+      <arc id="1776324205568" source="Change Delivery Indicator" target="p_2_1744382019.12322479608"/>
+      <arc id="1776324210560" source="Receive Order Confirmation" target="p_2_1744382019.12322479608"/>
+      <arc id="1776324210944" source="Update Order Confirmation" target="p_2_1744382019.12322479608"/>
+      <arc id="1776324210656" source="p_2_1744382019.12322479608" target="Cancel Goods Receipt"/>
+      <arc id="1776324209696" source="p_2_1744382019.12322479608" target="Update Order Confirmation"/>
+      <arc id="1776324211760" source="p_1_1744382019.12322477194" target="Change Delivery Indicator"/>
+      <arc id="1776324211664" source="p_1_1744382019.12322477194" target="Record Goods Receipt"/>
+      <arc id="1776324211952" source="Record Goods Receipt" target="p_2_1744382019.12322479608"/>
+      <arc id="1776324210416" source="Cancel Goods Receipt" target="p_2_1744382019.12322479608"/>
+      <arc id="1776324210704" source="p_2_1744382019.12322479608" target="Stop"/>
+      <arc id="1776324210800" source="Stop" target="sink"/>
+    </page>
+    <finalmarkings>
+      <marking>
+        <place idref="sink">
+          <text>1</text>
+        </place>
+      </marking>
+    </finalmarkings>
+  </net>
+</pnml>

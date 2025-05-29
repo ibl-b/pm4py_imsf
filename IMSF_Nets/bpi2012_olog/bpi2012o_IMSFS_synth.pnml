@@ -1,0 +1,103 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<pnml>
+  <net id="imported_1744372133.743394" type="http://www.pnml.org/version-2009/grammar/pnmlcoremodel">
+    <name>
+      <text>imported_1744372133.743394</text>
+    </name>
+    <page id="n0">
+      <place id="p_2_1743405731.3407765400">
+        <name>
+          <text>p_2_1743405731.3407765400</text>
+        </name>
+      </place>
+      <place id="sink">
+        <name>
+          <text>sink</text>
+        </name>
+      </place>
+      <place id="p_1_1743405731.3407769256">
+        <name>
+          <text>p_1_1743405731.3407769256</text>
+        </name>
+      </place>
+      <place id="p_3_1743405731.3407765290">
+        <name>
+          <text>p_3_1743405731.3407765290</text>
+        </name>
+      </place>
+      <place id="p_0_1743405731.33977876396">
+        <name>
+          <text>p_0_1743405731.33977876396</text>
+        </name>
+        <initialMarking>
+          <text>1</text>
+        </initialMarking>
+      </place>
+      <place id="flower">
+        <name>
+          <text>flower</text>
+        </name>
+      </place>
+      <transition id="O_SENT_BACK">
+        <name>
+          <text>O_SENT_BACK</text>
+        </name>
+      </transition>
+      <transition id="O_SELECTED">
+        <name>
+          <text>O_SELECTED</text>
+        </name>
+      </transition>
+      <transition id="skip_start">
+        <name>
+          <text>skip_start</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="3789b585-3928-42f2-b23e-b6200c52d0fc"/>
+      </transition>
+      <transition id="O_CANCELLED">
+        <name>
+          <text>O_CANCELLED</text>
+        </name>
+      </transition>
+      <transition id="O_SENT">
+        <name>
+          <text>O_SENT</text>
+        </name>
+      </transition>
+      <transition id="O_CREATED">
+        <name>
+          <text>O_CREATED</text>
+        </name>
+      </transition>
+      <transition id="skip_stop">
+        <name>
+          <text>skip_stop</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="3b13ac82-e26c-482e-94f3-5522b747edb0"/>
+      </transition>
+      <arc id="2164964363712" source="p_0_1743405731.33977876396" target="skip_start"/>
+      <arc id="2164964363520" source="p_3_1743405731.3407765290" target="O_CREATED"/>
+      <arc id="2164964363328" source="flower" target="O_SENT_BACK"/>
+      <arc id="2164964363616" source="p_1_1743405731.3407769256" target="O_SENT"/>
+      <arc id="2164964363424" source="O_SENT_BACK" target="flower"/>
+      <arc id="2164964363232" source="flower" target="O_CANCELLED"/>
+      <arc id="2164964363136" source="skip_start" target="flower"/>
+      <arc id="2164965278528" source="skip_start" target="p_2_1743405731.3407765400"/>
+      <arc id="2164972263200" source="p_2_1743405731.3407765400" target="skip_stop"/>
+      <arc id="2164964363088" source="flower" target="skip_stop"/>
+      <arc id="2164965277904" source="O_SENT" target="p_2_1743405731.3407765400"/>
+      <arc id="2164972262960" source="O_CREATED" target="p_1_1743405731.3407769256"/>
+      <arc id="2164972263728" source="p_2_1743405731.3407765400" target="O_SELECTED"/>
+      <arc id="2164972263056" source="O_SELECTED" target="p_3_1743405731.3407765290"/>
+      <arc id="2164972263152" source="skip_stop" target="sink"/>
+      <arc id="2164972263536" source="O_CANCELLED" target="flower"/>
+    </page>
+    <finalmarkings>
+      <marking>
+        <place idref="sink">
+          <text>1</text>
+        </place>
+      </marking>
+    </finalmarkings>
+  </net>
+</pnml>

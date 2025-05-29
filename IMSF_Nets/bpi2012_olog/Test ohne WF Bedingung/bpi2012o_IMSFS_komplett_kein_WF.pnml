@@ -1,0 +1,143 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<pnml>
+  <net id="imdf_net_1744614170.3851078" type="http://www.pnml.org/version-2009/grammar/pnmlcoremodel">
+    <name>
+      <text>imdf_net_1744614170.3851078</text>
+    </name>
+    <page id="n0">
+      <place id="p_3">
+        <name>
+          <text>p_3</text>
+        </name>
+      </place>
+      <place id="p_3_1744614052.8445255097">
+        <name>
+          <text>p_3_1744614052.8445255097</text>
+        </name>
+      </place>
+      <place id="p_6_1744614052.8445255509">
+        <name>
+          <text>p_6_1744614052.8445255509</text>
+        </name>
+      </place>
+      <place id="source">
+        <name>
+          <text>source</text>
+        </name>
+        <initialMarking>
+          <text>1</text>
+        </initialMarking>
+      </place>
+      <place id="sink">
+        <name>
+          <text>sink</text>
+        </name>
+      </place>
+      <place id="p_4_1744614052.8445258868">
+        <name>
+          <text>p_4_1744614052.8445258868</text>
+        </name>
+      </place>
+      <place id="p_2_1744614052.8445259502">
+        <name>
+          <text>p_2_1744614052.8445259502</text>
+        </name>
+      </place>
+      <place id="p_5_1744614052.8445252978">
+        <name>
+          <text>p_5_1744614052.8445252978</text>
+        </name>
+      </place>
+      <place id="flower">
+        <name>
+          <text>flower</text>
+        </name>
+      </place>
+      <transition id="c0e08815-d2ec-45e1-a835-3d731b0e21ce">
+        <name>
+          <text>O_ACCEPTED</text>
+        </name>
+      </transition>
+      <transition id="bf78cca5-5079-4908-b61f-8b8ec99c290d">
+        <name>
+          <text>O_DECLINED</text>
+        </name>
+      </transition>
+      <transition id="O_CANCELLED">
+        <name>
+          <text>O_CANCELLED</text>
+        </name>
+      </transition>
+      <transition id="Start">
+        <name>
+          <text>Start</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="1dd06d5f-b1d3-4016-adcf-58f8e9c1ed23"/>
+      </transition>
+      <transition id="O_SELECTED">
+        <name>
+          <text>O_SELECTED</text>
+        </name>
+      </transition>
+      <transition id="O_SENT_BACK">
+        <name>
+          <text>O_SENT_BACK</text>
+        </name>
+      </transition>
+      <transition id="skip_1">
+        <name>
+          <text>skip_1</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="6f1d6047-cdfe-4fa1-be21-293315838c5a"/>
+      </transition>
+      <transition id="O_CREATED">
+        <name>
+          <text>O_CREATED</text>
+        </name>
+      </transition>
+      <transition id="Stop">
+        <name>
+          <text>Stop</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="399385ce-9fb8-4395-a81e-1b77a99dc6b1"/>
+      </transition>
+      <transition id="O_SENT">
+        <name>
+          <text>O_SENT</text>
+        </name>
+      </transition>
+      <arc id="2878074512256" source="p_3" target="c0e08815-d2ec-45e1-a835-3d731b0e21ce"/>
+      <arc id="2878074503424" source="c0e08815-d2ec-45e1-a835-3d731b0e21ce" target="sink"/>
+      <arc id="2878074507840" source="p_3" target="bf78cca5-5079-4908-b61f-8b8ec99c290d"/>
+      <arc id="2878074512640" source="O_SENT" target="p_4_1744614052.8445258868"/>
+      <arc id="2878074511872" source="flower" target="Stop"/>
+      <arc id="2878074504960" source="O_SELECTED" target="p_3_1744614052.8445255097"/>
+      <arc id="2878074513216" source="p_6_1744614052.8445255509" target="Stop"/>
+      <arc id="2878016448896" source="Stop" target="p_3"/>
+      <arc id="2878074511248" source="p_3" target="skip_1"/>
+      <arc id="2878074507408" source="bf78cca5-5079-4908-b61f-8b8ec99c290d" target="sink"/>
+      <arc id="2878074512400" source="O_CANCELLED" target="p_5_1744614052.8445252978"/>
+      <arc id="2878074511392" source="skip_1" target="sink"/>
+      <arc id="2878074507168" source="p_3_1744614052.8445255097" target="O_CREATED"/>
+      <arc id="2878074505248" source="p_6_1744614052.8445255509" target="O_SELECTED"/>
+      <arc id="2878074512352" source="Start" target="p_6_1744614052.8445255509"/>
+      <arc id="2878074510432" source="p_4_1744614052.8445258868" target="O_CANCELLED"/>
+      <arc id="2878074511584" source="O_SENT" target="p_6_1744614052.8445255509"/>
+      <arc id="2878074507552" source="source" target="Start"/>
+      <arc id="2878060330672" source="p_2_1744614052.8445259502" target="O_SENT"/>
+      <arc id="2878074511536" source="Start" target="flower"/>
+      <arc id="2878074508080" source="O_CREATED" target="p_2_1744614052.8445259502"/>
+      <arc id="2878074505392" source="Start" target="p_5_1744614052.8445252978"/>
+      <arc id="2878074511728" source="O_SENT_BACK" target="flower"/>
+      <arc id="2878074512880" source="flower" target="O_SENT_BACK"/>
+      <arc id="2878074505584" source="p_5_1744614052.8445252978" target="O_CREATED"/>
+    </page>
+    <finalmarkings>
+      <marking>
+        <place idref="sink">
+          <text>1</text>
+        </place>
+      </marking>
+    </finalmarkings>
+  </net>
+</pnml>

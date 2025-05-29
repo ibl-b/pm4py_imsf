@@ -1,0 +1,136 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<pnml>
+  <net id="imsfs" type="http://www.pnml.org/version-2009/grammar/pnmlcoremodel">
+    <name>
+      <text>imsfs</text>
+    </name>
+    <page id="n0">
+      <place id="p_0_1744798203.7514478716">
+        <name>
+          <text>p_0_1744798203.7514478716</text>
+        </name>
+      </place>
+      <place id="p_4_1744798203.75255351424">
+        <name>
+          <text>p_4_1744798203.75255351424</text>
+        </name>
+      </place>
+      <place id="p_2_1744798203.75255356992">
+        <name>
+          <text>p_2_1744798203.75255356992</text>
+        </name>
+        <initialMarking>
+          <text>1</text>
+        </initialMarking>
+      </place>
+      <place id="p_1_1744798203.75255358530">
+        <name>
+          <text>p_1_1744798203.75255358530</text>
+        </name>
+      </place>
+      <place id="p_3_1744798203.75255355361">
+        <name>
+          <text>p_3_1744798203.75255355361</text>
+        </name>
+      </place>
+      <place id="sink">
+        <name>
+          <text>sink</text>
+        </name>
+      </place>
+      <place id="flower">
+        <name>
+          <text>flower</text>
+        </name>
+      </place>
+      <transition id="Declaration APPROVED by BUDGET OWNER">
+        <name>
+          <text>Declaration APPROVED by BUDGET OWNER</text>
+        </name>
+      </transition>
+      <transition id="Declaration FOR_APPROVAL by PRE_APPROVER">
+        <name>
+          <text>Declaration FOR_APPROVAL by PRE_APPROVER</text>
+        </name>
+      </transition>
+      <transition id="Declaration FINAL_APPROVED by SUPERVISOR">
+        <name>
+          <text>Declaration FINAL_APPROVED by SUPERVISOR</text>
+        </name>
+      </transition>
+      <transition id="Declaration FOR_APPROVAL by SUPERVISOR">
+        <name>
+          <text>Declaration FOR_APPROVAL by SUPERVISOR</text>
+        </name>
+      </transition>
+      <transition id="Declaration APPROVED by PRE_APPROVER">
+        <name>
+          <text>Declaration APPROVED by PRE_APPROVER</text>
+        </name>
+      </transition>
+      <transition id="Declaration REJECTED by MISSING">
+        <name>
+          <text>Declaration REJECTED by MISSING</text>
+        </name>
+      </transition>
+      <transition id="Declaration REJECTED by SUPERVISOR">
+        <name>
+          <text>Declaration REJECTED by SUPERVISOR</text>
+        </name>
+      </transition>
+      <transition id="Payment Handled">
+        <name>
+          <text>Payment Handled</text>
+        </name>
+      </transition>
+      <transition id="Request Payment">
+        <name>
+          <text>Request Payment</text>
+        </name>
+      </transition>
+      <transition id="Start">
+        <name>
+          <text>Start</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="df920bfe-2fa8-4c02-a222-88ad91e57b1f"/>
+      </transition>
+      <transition id="Stop">
+        <name>
+          <text>Stop</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="92ec48ba-1a82-4fbf-8aba-eda9691d7ef6"/>
+      </transition>
+      <arc id="2053280192768" source="p_1_1744798203.75255358530" target="Declaration REJECTED by MISSING"/>
+      <arc id="2053365255424" source="flower" target="Declaration APPROVED by PRE_APPROVER"/>
+      <arc id="2053365259264" source="flower" target="Stop"/>
+      <arc id="2053361837840" source="Declaration REJECTED by MISSING" target="p_3_1744798203.75255355361"/>
+      <arc id="2053361834528" source="p_2_1744798203.75255356992" target="Start"/>
+      <arc id="2053361837216" source="p_3_1744798203.75255355361" target="Stop"/>
+      <arc id="2053365266080" source="flower" target="Declaration FOR_APPROVAL by PRE_APPROVER"/>
+      <arc id="2053365254320" source="p_4_1744798203.75255351424" target="Declaration FINAL_APPROVED by SUPERVISOR"/>
+      <arc id="2053365258928" source="Stop" target="sink"/>
+      <arc id="2053365252784" source="flower" target="Declaration APPROVED by BUDGET OWNER"/>
+      <arc id="2053353755968" source="Declaration FINAL_APPROVED by SUPERVISOR" target="p_1_1744798203.75255358530"/>
+      <arc id="2053353754816" source="p_1_1744798203.75255358530" target="Request Payment"/>
+      <arc id="2053365265984" source="Declaration FOR_APPROVAL by PRE_APPROVER" target="flower"/>
+      <arc id="2053365254848" source="Declaration FOR_APPROVAL by SUPERVISOR" target="flower"/>
+      <arc id="2053365262528" source="Start" target="flower"/>
+      <arc id="2053278119632" source="p_0_1744798203.7514478716" target="Payment Handled"/>
+      <arc id="2053361839184" source="Payment Handled" target="p_3_1744798203.75255355361"/>
+      <arc id="2053361834576" source="Declaration REJECTED by SUPERVISOR" target="p_3_1744798203.75255355361"/>
+      <arc id="2053365258448" source="Declaration APPROVED by BUDGET OWNER" target="flower"/>
+      <arc id="2053365256288" source="Start" target="p_4_1744798203.75255351424"/>
+      <arc id="2053365265888" source="flower" target="Declaration FOR_APPROVAL by SUPERVISOR"/>
+      <arc id="2053365255136" source="Declaration APPROVED by PRE_APPROVER" target="flower"/>
+      <arc id="2053278118384" source="Request Payment" target="p_0_1744798203.7514478716"/>
+      <arc id="2053361837936" source="p_4_1744798203.75255351424" target="Declaration REJECTED by SUPERVISOR"/>
+    </page>
+    <finalmarkings>
+      <marking>
+        <place idref="sink">
+          <text>1</text>
+        </place>
+      </marking>
+    </finalmarkings>
+  </net>
+</pnml>
